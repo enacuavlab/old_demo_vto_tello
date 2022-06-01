@@ -42,5 +42,5 @@ else
   PHYSID=`iw dev $WIFI_DEV info | grep wiphy | awk '{print "phy"$2}'`
   sudo iw $PHYSID set netns $NSID
   
-  docker exec $DRONE_AP /connect_drone.sh &
+#  docker exec $DRONE_AP /connect_drone.sh &
 fi
