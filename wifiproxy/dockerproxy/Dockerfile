@@ -4,11 +4,13 @@ MAINTAINER Anqi Xu <ax@elementai.com>
 
 RUN apt-get update -y --fix-missing \
     && apt-get install -y iproute2 isc-dhcp-client iputils-ping net-tools wireless-tools socat pcregrep iw psmisc \
+    && apt-get install -y vim python3 \
     && apt-get autoremove -y \
     && apt-get autoclean -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY payload/connect_drone.sh /
+COPY payload/minitest.py /
 
 RUN sed -i 's/timeout 300;/timeout 10;/g' /etc/dhcp/dhclient.conf
 

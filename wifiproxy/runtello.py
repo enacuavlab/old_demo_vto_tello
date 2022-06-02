@@ -9,7 +9,85 @@ import sys
 import re
 
 
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class thread_ping(threading.Thread):
+  def __init__(self,name,commands):
+    threading.Thread.__init__(self)
+    self.name = name
+    self.commands = commands
+    self.running = True
 
+  def run(self):
+    prev_state=False
+    while self.running:
+      res = subprocess.run(
+        ['docker','exec',self.name,'/bin/ping','-c 1','-W 1','192.168.10.1'], capture_output=True, text=True
+      )
+      tmp=res.stdout
+      if ("100% packet loss" in tmp):curr_state=False
+      else: curr_state=True
+      if ((prev_state != curr_state) and curr_state): self.startup_sequence()
+      prev_state = curr_state
+
+    print("Thread ping stopped")
+
+  def startup_sequence(self):
+    for i in range(5): 
+      if self.running: time.sleep(1)
+    if self.running:
+      self.commands.put('command')
+      self.commands.put('streamon')
+      self.commands.put('downvision 0')
+
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class thread_monitor_batt(threading.Thread):
+  def __init__(self,sock,commands):
+    threading.Thread.__init__(self)
+    self.sock = sock
+    self.commands = commands
+    self.running = True
+
+  def run(self):
+    msg='battery?'
+    while self.running:
+      if (msg not in self.commands.queue): self.commands.put(msg)
+      try:
+        data, server = self.sock.recvfrom(1518)
+        tmp=data.decode(encoding="utf-8")
+        if(tmp.count('\n')==1):
+          batt=tmp[:-1]
+          print(batt)
+          time.sleep(1)
+
+      except socket.timeout:
+        pass
+
+    print("Thread batt stopped")
+
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class thread_mission(threading.Thread):
+  def __init__(self,commands):
+    threading.Thread.__init__(self)
+    self.commands = commands
+    self.running = True
+
+  def run(self):
+    for i in range(5): 
+      if self.running:time.sleep(1)
+    if self.running: self.commands.put('takeoff')
+    for i in range(8): 
+      if self.running:time.sleep(1)
+    if self.running: self.commands.put('land')
+    print("Thread mission stopped")
+
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 def check_connection(name):
   ret=False
   res1 = subprocess.run(
@@ -33,59 +111,14 @@ def check_connection(name):
   return(ret)
 
 
-def startup_sequence(commands):
-  time.sleep(5)
-  commands.put('command')
-  commands.put('streamon')
-  commands.put('downvision 0')
+def close_connection(name):
+  res = subprocess.run(
+    ['docker','exec',name,'iw dev $WIFI_DEV disconnect'], capture_output=True, text=True
+  )
 
 
-def monitor_connection(name,commands):
-  prev_state=False
-  while True:
-    res = subprocess.run(
-      ['docker','exec',name,'/bin/ping','-c 1','-W 1','192.168.10.1'], capture_output=True, text=True
-    )
-    tmp=res.stdout
-    if ("100% packet loss" in tmp):curr_state=False
-    else: curr_state=True
-    if ((prev_state != curr_state) and curr_state): startup_sequence(commands)
-    prev_state = curr_state
-
-
-def monitor_battery(sock,commands):
-  prev_state=False
-  while True: 
-    msg='battery?'
-    if (msg not in commands.queue): commands.put(msg)
-    try:
-      data, server = sock.recvfrom(1518)
-      tmp=data.decode(encoding="utf-8")
-      if(tmp.count('\n')==1):
-        bat=tmp[:-1]
-        print(bat)
-        time.sleep(1)
-    except Exception:
-      print ('\nExit . . .\n')
-      break
-
-
-def mission_sequence(commands):
-  time.sleep(5)
-  commands.put('takeoff')
-  time.sleep(8)
-  #commands.put('up 100')
-  #time.sleep(6)
-  #commands.put('cw 180')
-  #time.sleep(6)
-  #commands.put('ccw 180')
-  #time.sleep(5)
-  commands.put('land')
-
-
+#------------------------------------------------------------------------------
 if __name__ == '__main__':
-  commands = queue.Queue()
-  commands.put('command')
 
   if(len(sys.argv)==2):
     if(sys.argv[1] == '?'):
@@ -95,32 +128,38 @@ if __name__ == '__main__':
     else:
       for i in  docker.DockerClient().containers.list():
         if(sys.argv[1] == i.name):
-          if(check_connection(i.name)): 
+          if(check_connection(i.name)):
+
             print(i.name+" created & connected")
             tello_add = (docker.DockerClient().containers.get(i.name).attrs['NetworkSettings']['IPAddress'], 8889)
             print(tello_add)
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            pingThread = threading.Thread(target=monitor_connection,args=(i.name,commands))
-            battThread = threading.Thread(target=monitor_battery,args=(sock,commands))
-            missThread = threading.Thread(target=mission_sequence,args=[commands])
-            pingThread.start()
-            battThread.start()
-            missThread.start()
-            
+            sock.settimeout(1.0)
+            commands = queue.Queue()
+            commands.put('command')
+            threadPing = thread_ping(i.name,commands)
+            threadBatt = thread_monitor_batt(sock,commands)
+            threadMission = thread_mission(commands)
+            threadPing.start()
+            threadBatt.start()
+            threadMission.start()
+
             try:
               while True:
-
                 while not commands.empty():
                   print(list(commands.queue))
                   msg=commands.get()
                   print("Sending <"+msg+">")
                   sock.sendto(msg.encode(encoding="utf-8"),tello_add)
 
-                time.sleep(0.5)
+                time.sleep(0.1)
+
             except KeyboardInterrupt:
-              print("KeyboardInterrupt")
-              missThread.join()
-              battThread.join()
-              pingThread.join()
+              print("\nWe are interrupting the program\n")
+              threadMission.running = False
+              threadBatt.running = False
+              threadPing.running = False
+              time.sleep(1)
               sock.close()
-              exit()
+              close_connection(i.name)
+              print("mainloop stopped")

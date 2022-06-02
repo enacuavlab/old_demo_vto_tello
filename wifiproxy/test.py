@@ -137,29 +137,29 @@ if __name__ == '__main__':
             sock.settimeout(1.0)
             commands = queue.Queue()
             commands.put('command')
-            threadPing = thread_ping(i.name,commands)
+#            threadPing = thread_ping(i.name,commands)
             threadBatt = thread_monitor_batt(sock,commands)
-            threadMission = thread_mission(commands)
-            threadPing.start()
-            threadBatt.start()
-            threadMission.start()
+#            threadMission = thread_mission(commands)
+#            threadPing.start()
+#            threadBatt.start()
+#            threadMission.start()
 
             try:
               while True:
                 while not commands.empty():
-                  print(list(commands.queue))
+#                  print(list(commands.queue))
                   msg=commands.get()
-                  print("Sending <"+msg+">")
-                  sock.sendto(msg.encode(encoding="utf-8"),tello_add)
+#                  print("Sending <"+msg+">")
+#                  sock.sendto(msg.encode(encoding="utf-8"),tello_add)
 
                 time.sleep(0.1)
 
             except KeyboardInterrupt:
               print("\nWe are interrupting the program\n")
-              threadMission.running = False
+#              threadMission.running = False
               threadBatt.running = False
-              threadPing.running = False
+#              threadPing.running = False
               time.sleep(1)
               sock.close()
-              close_connection(i.name)
+#              close_connection(i.name)
               print("mainloop stopped")
