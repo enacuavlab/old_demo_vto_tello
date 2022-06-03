@@ -84,7 +84,7 @@ if __name__ == '__main__':
         print(list(commands.queue))
         msg=commands.get()
         print("Sending <"+msg+">")
-        sock.sendto(msg.encode(encoding="utf-8"),tello_add)
+        sock.sendto(msg.encode(encoding="utf-8"),('172.17.0.2',8889))
 
       time.sleep(0.1)
 

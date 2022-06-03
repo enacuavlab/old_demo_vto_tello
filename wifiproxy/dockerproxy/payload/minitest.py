@@ -24,14 +24,11 @@ class thread_monitor_batt(threading.Thread):
         tmp=data.decode(encoding="utf-8")
         if(tmp.count('\n')==1):
           batt=tmp[:-1]
-          print(batt)
           self.sockGCS.sendto(batt.encode(encoding="utf-8"),self.addGCS)
           time.sleep(1)
 
-      except .encode(encoding="utf-8")socket.timeout:
+      except socket.timeout:
         pass
-
-    print("Thread batt stopped")
 
 
 #------------------------------------------------------------------------------
@@ -48,12 +45,10 @@ class thread_command(threading.Thread):
       try:
         data, server = self.sockGCS.recvfrom(1518)
         tmp=data.decode(encoding="utf-8")
-        print(tmp)
+        self.commands.put(tmp)
 
       except socket.timeout:
         pass
-
-    print("Thread command stopped")
 
 
 #------------------------------------------------------------------------------
@@ -62,6 +57,8 @@ if __name__ == '__main__':
 
   sockGCS = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   addGCS = ('172.17.0.1',8889)
+  sockGCS.bind(('172.17.0.2',8889))
+  sockGCS.settimeout(1.0)
 
   sockDrone = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   addDrone = ('192.168.10.1',8889)
@@ -74,13 +71,12 @@ if __name__ == '__main__':
   threadBatt = thread_monitor_batt(addGCS,sockGCS,sockDrone,commands)
   threadCmd = thread_command(sockGCS,commands)
   threadBatt.start()
+  threadCmd.start()
 
   try:
     while True:
       while not commands.empty():
-        print(list(commands.queue))
         msg=commands.get()
-        print("Sending <"+msg+">")
         sockDrone.sendto(msg.encode(encoding="utf-8"),addDrone)
 
       time.sleep(0.1)
@@ -91,5 +87,4 @@ if __name__ == '__main__':
     time.sleep(1)
     sockDrone.close()
     sockGCS.close()
-    print("mainloop stopped")
 
