@@ -14,7 +14,7 @@ do
 
   WIFI_IP=$(ip a | grep $WIFI_DEV | pcregrep -o1 'inet ([0-9]+.[0-9]+.[0-9]+.[0-9]+)')
   /usr/bin/socat udp-recv:11111,bind=$WIFI_IP udp-sendto:172.17.0.1:$VID_PORT &>/dev/null &
-  /minitest.py $WIFI_IP &> /dev/null &
+  /minitest.py $CMD_PORT &> /dev/null &
 
   while timeout 0.5 ping -c 1 -n 192.168.10.1 &> /dev/null; do sleep 0.5; done
 

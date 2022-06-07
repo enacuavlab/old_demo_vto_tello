@@ -3,6 +3,9 @@ import socket
 import time
 import threading
 import queue
+import sys
+import docker
+import subprocess
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -61,7 +64,7 @@ class thread_startup(threading.Thread):
 
 
 #------------------------------------------------------------------------------
-if __name__ == '__main__':
+def main(droneip):
 
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   tello_add=('172.17.0.1',8889)
@@ -84,7 +87,7 @@ if __name__ == '__main__':
         print(list(commands.queue))
         msg=commands.get()
         print("Sending <"+msg+">")
-        sock.sendto(msg.encode(encoding="utf-8"),('172.17.0.2',8889))
+        sock.sendto(msg.encode(encoding="utf-8"),(droneip,8889))
 
       time.sleep(0.1)
 
@@ -97,3 +100,30 @@ if __name__ == '__main__':
     time.sleep(1)
     sock.close()
     print("mainloop stopped")
+
+
+#------------------------------------------------------------------------------
+if __name__ == '__main__':
+
+  if(len(sys.argv)==2):
+    if(sys.argv[1] == '?'):
+      for i in  docker.DockerClient().containers.list():
+        print(i.name+" created")
+    else:
+      for i in  docker.DockerClient().containers.list():
+        if(sys.argv[1] == i.name):
+          res = subprocess.run(
+            ['docker','exec',i.name,'/bin/ping','-c 1','-W 1','192.168.10.1'], capture_output=True, text=True
+          )
+          if ("100% packet loss" in res.stdout):break
+          print(i.name+" connected")
+          res = subprocess.run(
+            ['docker','exec',i.name,'/usr/bin/env'], capture_output=True, text=True
+          )
+          tmp=res.stdout
+          left="CMD_PORT="
+          if (left in tmp):
+            cmd_port=(tmp[tmp.index(left)+len(left):])
+            print(cmd_port)
+
+#          main(docker.DockerClient().containers.get(i.name).attrs['NetworkSettings']['IPAddress'])

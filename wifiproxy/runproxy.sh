@@ -2,7 +2,7 @@
 
 sudo mkdir -p /var/run/netns
 
-# DRONE_AP and VID_PORT should be set before calling this script
+# DRONE_AP, CMD_PORT and VID_PORT should be set before calling this script
 
 wifiadapters=`iw dev | grep Interface | awk '{print $2}'`
 WIFI_DEV=""
@@ -26,6 +26,7 @@ else
   docker run -d --rm --privileged \
     -e DRONE_AP=$DRONE_AP \
     -e WIFI_DEV=$WIFI_DEV \
+    -e CMD_PORT=$CMD_PORT \
     -e VID_PORT=$VID_PORT \
     --name $DRONE_AP \
     wifiproxy &
