@@ -59,13 +59,12 @@ def main(docker_ip,cmd_port):
   sockDrone = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   addDrone = ('192.168.10.1',8889)
   sockGCS = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  #sockGCS.bind(('172.17.0.2',cmd_port))
   sockGCS.bind((docker_ip,cmd_port))
 
   commands = queue.Queue()
   commands.put('command')
 
-  threadBatt = thread_batt(('172.17.0.1',8890),sockGCS,sockDrone,commands)
+  threadBatt = thread_batt(('172.17.0.1',cmd_port),sockGCS,sockDrone,commands)
   threadGCS = thread_gcs(sockGCS,commands)
   threadBatt.start()
   threadGCS.start()

@@ -49,7 +49,7 @@ class thread_batt(threading.Thread):
 def main(docker_ip,cmd_port):
 
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  sock.bind(('172.17.0.1',8890))
+  sock.bind(('172.17.0.1',cmd_port))
 
   tello_add=(docker_ip,cmd_port)
 
