@@ -9,7 +9,23 @@ import docker
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class thread_monitor_batt(threading.Thread):
+class thread_startup(threading.Thread):
+  def __init__(self,commands):
+    threading.Thread.__init__(self)
+    self.commands = commands
+    self.running = True
+
+  def run(self):
+    if self.running:
+      self.commands.put('command')
+      self.commands.put('streamon')
+      self.commands.put('downvision 0')
+    print("Thread startup stopped")
+
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class thread_batt(threading.Thread):
   def __init__(self,sock):
     threading.Thread.__init__(self)
     self.sock = sock
@@ -30,65 +46,27 @@ class thread_monitor_batt(threading.Thread):
 
 
 #------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-class thread_mission(threading.Thread):
-  def __init__(self,commands):
-    threading.Thread.__init__(self)
-    self.commands = commands
-    self.running = True
-
-  def run(self):
-    for i in range(5): 
-      if self.running:time.sleep(1)
-    if self.running: self.commands.put('takeoff')
-    for i in range(8): 
-      if self.running:time.sleep(1)
-    if self.running: self.commands.put('land')
-    print("Thread mission stopped")
-
-
-#------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-class thread_startup(threading.Thread):
-  def __init__(self,commands):
-    threading.Thread.__init__(self)
-    self.commands = commands
-    self.running = True
-
-  def run(self):
-    if self.running:
-      self.commands.put('command')
-      self.commands.put('streamon')
-      self.commands.put('downvision 0')
-    print("Thread startup stopped")
-
-
-#------------------------------------------------------------------------------
-def main(cmd_port):
+def main(docker_ip,cmd_port):
 
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  #tello_add=('172.17.0.1',8889)
-  tello_add=('172.17.0.1',cmd_port)
-  sock.bind(tello_add)
-  sock.settimeout(1.0)
+  sock.bind(('172.17.0.1',8890))
+
+  tello_add=(docker_ip,cmd_port)
 
   commands = queue.Queue()
   commands.put('command')
 
-  threadBatt = thread_monitor_batt(sock)
-  #threadMiss = thread_mission(commands)
   threadStart = thread_startup(commands)
+  threadBatt = thread_batt(sock)
+
   threadBatt.start()
-  #threadMiss.start()
   threadStart.start()
 
   try:
     while True:
       while not commands.empty():
-        print(list(commands.queue))
         msg=commands.get()
         print("Sending <"+msg+">")
-        #sock.sendto(msg.encode(encoding="utf-8"),('172.17.0.1',8889))
         sock.sendto(msg.encode(encoding="utf-8"),tello_add)
 
       time.sleep(0.1)
@@ -97,7 +75,6 @@ def main(cmd_port):
   except KeyboardInterrupt:
     print("\nWe are interrupting the program\n")
     threadStart.running = False
-#    threadMiss.running = False
     threadBatt.running = False
     time.sleep(1)
     sock.close()
@@ -126,5 +103,5 @@ if __name__ == '__main__':
           left="CMD_PORT="
           if (left in tmp):
             cmd_port=int((tmp[tmp.index(left)+len(left):]).split()[0])
-            #cmd_ip=(docker.DockerClient().containers.get(i.name).attrs['NetworkSettings']['IPAddress'])
-            main(cmd_port)
+            docker_ip=(docker.DockerClient().containers.get(i.name).attrs['NetworkSettings']['IPAddress'])
+            main(docker_ip,cmd_port)

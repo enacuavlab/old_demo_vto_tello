@@ -7,7 +7,7 @@ import sys
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class thread_monitor_batt(threading.Thread):
+class thread_batt(threading.Thread):
   def __init__(self,addGCS,sockGCS,sockDrone,commands):
     threading.Thread.__init__(self)
     self.addGCS = addGCS
@@ -26,15 +26,16 @@ class thread_monitor_batt(threading.Thread):
         if(tmp.count('\n')==1):
           batt=tmp[:-1]
           self.sockGCS.sendto(batt.encode(encoding="utf-8"),self.addGCS)
+          print(batt)
           time.sleep(1)
 
       except socket.timeout:
         pass
 
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class thread_gcs(threading.Thread):
 
-#------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-class thread_command(threading.Thread):
   def __init__(self,sockGCS,commands):
     threading.Thread.__init__(self)
     self.sockGCS = sockGCS
@@ -53,25 +54,21 @@ class thread_command(threading.Thread):
 
 
 #------------------------------------------------------------------------------
-def main(cmd_port):
-
-  sockGCS = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  addGCS = ('172.17.0.1',cmd_port)
-  sockGCS.bind(('172.17.0.2',cmd_port))
-  sockGCS.settimeout(1.0)
+def main(docker_ip,cmd_port):
 
   sockDrone = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   addDrone = ('192.168.10.1',8889)
-  sockDrone.bind (('192.168.10.2',8889))
-  sockDrone.settimeout(1.0)
+  sockGCS = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  #sockGCS.bind(('172.17.0.2',cmd_port))
+  sockGCS.bind((docker_ip,cmd_port))
 
   commands = queue.Queue()
   commands.put('command')
 
-  threadBatt = thread_monitor_batt(addGCS,sockGCS,sockDrone,commands)
-  threadCmd = thread_command(sockGCS,commands)
+  threadBatt = thread_batt(('172.17.0.1',8890),sockGCS,sockDrone,commands)
+  threadGCS = thread_gcs(sockGCS,commands)
   threadBatt.start()
-  threadCmd.start()
+  threadGCS.start()
 
   try:
     while True:
@@ -82,7 +79,7 @@ def main(cmd_port):
       time.sleep(0.1)
 
   except KeyboardInterrupt:
-    threadCmd.running = False
+    threadGCS.running = False
     threadBatt.running = False
     time.sleep(1)
     sockDrone.close()
@@ -92,4 +89,4 @@ def main(cmd_port):
 #------------------------------------------------------------------------------
 if __name__ == '__main__':
 
-  if(len(sys.argv)==2):main(int(sys.argv[1]))
+  if(len(sys.argv)==3):main(sys.argv[1],int(sys.argv[2]))
