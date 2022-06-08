@@ -4,8 +4,8 @@ import time
 import threading
 import queue
 import sys
-import docker
 import subprocess
+import docker
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -64,10 +64,11 @@ class thread_startup(threading.Thread):
 
 
 #------------------------------------------------------------------------------
-def main(droneip):
+def main(cmd_port):
 
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  tello_add=('172.17.0.1',8889)
+  #tello_add=('172.17.0.1',8889)
+  tello_add=('172.17.0.1',cmd_port)
   sock.bind(tello_add)
   sock.settimeout(1.0)
 
@@ -87,7 +88,8 @@ def main(droneip):
         print(list(commands.queue))
         msg=commands.get()
         print("Sending <"+msg+">")
-        sock.sendto(msg.encode(encoding="utf-8"),(droneip,8889))
+        #sock.sendto(msg.encode(encoding="utf-8"),('172.17.0.1',8889))
+        sock.sendto(msg.encode(encoding="utf-8"),tello_add)
 
       time.sleep(0.1)
 
@@ -123,7 +125,6 @@ if __name__ == '__main__':
           tmp=res.stdout
           left="CMD_PORT="
           if (left in tmp):
-            cmd_port=(tmp[tmp.index(left)+len(left):])
-            print(cmd_port)
-
-#          main(docker.DockerClient().containers.get(i.name).attrs['NetworkSettings']['IPAddress'])
+            cmd_port=int((tmp[tmp.index(left)+len(left):]).split()[0])
+            #cmd_ip=(docker.DockerClient().containers.get(i.name).attrs['NetworkSettings']['IPAddress'])
+            main(cmd_port)

@@ -3,6 +3,7 @@ import socket
 import time
 import threading
 import queue
+import sys
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -52,12 +53,11 @@ class thread_command(threading.Thread):
 
 
 #------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-if __name__ == '__main__':
+def main(cmd_port):
 
   sockGCS = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  addGCS = ('172.17.0.1',8889)
-  sockGCS.bind(('172.17.0.2',8889))
+  addGCS = ('172.17.0.1',cmd_port)
+  sockGCS.bind(('172.17.0.2',cmd_port))
   sockGCS.settimeout(1.0)
 
   sockDrone = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -88,3 +88,8 @@ if __name__ == '__main__':
     sockDrone.close()
     sockGCS.close()
 
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+if __name__ == '__main__':
+
+  if(len(sys.argv)==2):main(int(sys.argv[1]))
