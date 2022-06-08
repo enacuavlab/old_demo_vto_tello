@@ -25,6 +25,31 @@ class thread_startup(threading.Thread):
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
+class thread_mission(threading.Thread):
+  def __init__(self,commands):
+    threading.Thread.__init__(self)
+    self.commands = commands
+    self.running = True
+
+  def run(self):
+
+    for i in range(5):
+      if self.running:time.sleep(1)
+    if self.running: self.commands.put('takeoff')
+
+    for i in range(8):
+      if self.running:time.sleep(1)
+    if self.running: self.commands.put('up 100')
+
+    for i in range(8):
+      if self.running:time.sleep(1)
+    if self.running: self.commands.put('land')
+
+    print("Thread mission stopped")
+
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class thread_batt(threading.Thread):
   def __init__(self,sock):
     threading.Thread.__init__(self)
@@ -46,6 +71,7 @@ class thread_batt(threading.Thread):
 
 
 #------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 def main(docker_ip,cmd_port):
 
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -56,11 +82,13 @@ def main(docker_ip,cmd_port):
   commands = queue.Queue()
   commands.put('command')
 
-  threadStart = thread_startup(commands)
   threadBatt = thread_batt(sock)
+  threadStart = thread_startup(commands)
+  threadMission = thread_mission(commands)
 
   threadBatt.start()
   threadStart.start()
+  threadMission.start()
 
   try:
     while True:
@@ -74,6 +102,7 @@ def main(docker_ip,cmd_port):
 
   except KeyboardInterrupt:
     print("\nWe are interrupting the program\n")
+    threadMission.running = False
     threadStart.running = False
     threadBatt.running = False
     time.sleep(1)
