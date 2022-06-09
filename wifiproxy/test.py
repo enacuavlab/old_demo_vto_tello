@@ -84,11 +84,11 @@ def main(docker_ip,cmd_port):
 
   threadBatt = thread_batt(sock)
   threadStart = thread_startup(commands)
-  threadMission = thread_mission(commands)
+#  threadMission = thread_mission(commands)
 
   threadBatt.start()
   threadStart.start()
-  threadMission.start()
+#  threadMission.start()
 
   try:
     while True:
@@ -102,7 +102,7 @@ def main(docker_ip,cmd_port):
 
   except KeyboardInterrupt:
     print("\nWe are interrupting the program\n")
-    threadMission.running = False
+#    threadMission.running = False
     threadStart.running = False
     threadBatt.running = False
     time.sleep(1)
