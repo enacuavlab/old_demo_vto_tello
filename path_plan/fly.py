@@ -35,6 +35,31 @@ class thread_batt(threading.Thread):
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
+class thread_mission(threading.Thread):
+  def __init__(self,commands):
+    threading.Thread.__init__(self)
+    self.commands = commands
+    self.running = True
+
+  def run(self):
+
+    for i in range(5):
+      if self.running:time.sleep(1)
+    if self.running: self.commands.put('takeoff')
+
+    for i in range(8):
+      if self.running:time.sleep(1)
+    if self.running: self.commands.put('up 100')
+
+    for i in range(8):
+      if self.running:time.sleep(1)
+    if self.running: self.commands.put('land')
+
+    print("Thread mission stopped")
+
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 def init():
   ret=True
   for j in ac_list:
@@ -66,6 +91,9 @@ def main():
   threadBatt.start()
 
   commands = queue.Queue()
+  threadMission = thread_mission(commands)
+  threadMission.start()
+
   commands.put('command')
   commands.put('streamon')
   commands.put('downvision 0')
@@ -83,7 +111,10 @@ def main():
   except KeyboardInterrupt:
     print("\nWe are interrupting the program\n")
     time.sleep(1)
+    threadMission.running = False
     threadBatt.running = False
+    for j in ac_list: j[4].sendto("land".encode(encoding="utf-8"),(j[2],j[3]))
+    time.sleep(1)
     for j in ac_list: j[4].close()
     print("mainloop stopped")
 
