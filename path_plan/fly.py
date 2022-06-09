@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+from natnet2python import Natnet2python
+from natnet2python import Vehicle
 import socket
 import select
 import threading
@@ -10,7 +12,63 @@ import docker
 #from djitellopy import TelloSwarm
 
 #ac_list = [['TELLO-F0B594',59,0,0,0],]
-ac_list = [['TELLO-F0B594',59,0,0,0],['TELLO-ED4310',60,0,0,0]]
+ac_list = [['TELLO-ED4310',60,0,0,0],]
+#ac_list = [['TELLO-F0B594',59,0,0,0],['TELLO-ED4310',60,0,0,0]]
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class tello():
+  def __init__(self):
+    pass
+
+  def send_rc_control(self, left_right_velocity: int, forward_backward_velocity: int, up_down_velocity: int, yaw_velocity: int):
+    def clamp100(x: int) -> int:
+      return max(-100, min(100, x))
+
+      if time.time() - self.last_rc_control_timestamp > self.TIME_BTW_RC_CONTROL_COMMANDS:
+        self.last_rc_control_timestamp = time.time()
+        cmd = 'rc {} {} {} {}'.format(
+          clamp100(left_right_velocity),
+          clamp100(forward_backward_velocity),
+          clamp100(up_down_velocity),
+          clamp100(yaw_velocity)
+        )
+        self.send_command_without_return(cmd)
+
+  def send_velocity_enu(self, vel_enu, heading):
+    k = 100.
+    def RBI_pprz(psi):
+      cp = np.cos(psi)
+      sp = np.sin(psi)
+      return np.array([[sp, cp, 0.],
+                       [cp, -sp, 0.],
+                       [0., 0., 1.]])
+    def RBI(psi):
+      cp = np.cos(psi)
+      sp = np.sin(psi)
+      return np.array([[cp, sp, 0.],
+                       [-sp, cp, 0.],
+                       [0., 0., 1.]])
+    def norm_ang(x):
+      while x > np.pi :
+        x -= 2*np.pi
+      while x < -np.pi :
+        x += 2*np.pi
+      return x
+      heading = norm_ang(heading)
+      V_err_enu = vel_enu - self.velocity_enu
+      R = RBI(self.heading)
+      V_err_xyz = R.dot(V_err_enu)
+      err_heading = norm_ang(norm_ang(heading) - self.heading)
+      self.send_rc_control(int(-V_err_xyz[1]*k),int(V_err_xyz[0]*k),int(V_err_xyz[2]*k), int(-err_heading*k))
+
+  def fly_to_enu(self,position_enu, heading=None):
+    if heading is None:
+      heading = self.heading
+      pos_error = position_enu - self.position_enu
+      vel_enu = pos_error*1.2 - self.velocity_enu
+      self.send_velocity_enu(vel_enu, heading)
+
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -53,6 +111,11 @@ class thread_mission(threading.Thread):
 
     for i in range(8):
       if self.running:time.sleep(1)
+
+    if self.running: self.commands.put('up 100')
+
+    for i in range(8):
+      if self.running:time.sleep(1)
     if self.running: self.commands.put('land')
 
     print("Thread mission stopped")
@@ -87,6 +150,13 @@ def main():
     j[4].bind(('172.17.0.1',j[3]))
     inout.append(j[4])
 
+  vehicles = []
+  for i in ac_list: vehicles.append(Vehicle(str(i[1])))
+  ac_id_list = [[_[1], _[1]] for _ in ac_list]
+  
+  threadOpt = Natnet2python(ac_id_list, vehicles, freq=40)
+  threadOpt.run()
+
   threadBatt = thread_batt(inout)
   threadBatt.start()
 
@@ -113,6 +183,7 @@ def main():
     time.sleep(1)
     threadMission.running = False
     threadBatt.running = False
+    threadOpt.stop()
     for j in ac_list: j[4].sendto("land".encode(encoding="utf-8"),(j[2],j[3]))
     time.sleep(1)
     for j in ac_list: j[4].close()
