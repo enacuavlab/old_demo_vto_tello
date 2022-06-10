@@ -31,6 +31,7 @@ class Tello():
     self.velocity_enu = velocity
     self.heading = heading
 
+  #-----------------------------------------------------------------------------
   def send_rc_control(self, left_right_velocity: int, forward_backward_velocity: int, up_down_velocity: int, yaw_velocity: int):
     def clamp100(x: int) -> int:
       return max(-100, min(100, x))
@@ -38,13 +39,14 @@ class Tello():
     if time.time() - self.last_rc_control_timestamp > 0.001:
       self.last_rc_control_timestamp = time.time()
       cmd = 'rc {} {} {} {}'.format(
-          clamp100(left_right_velocity),
-          clamp100(forward_backward_velocity),
-          clamp100(up_down_velocity),
-          clamp100(yaw_velocity)
+        clamp100(left_right_velocity),
+        clamp100(forward_backward_velocity),
+        clamp100(up_down_velocity),
+        clamp100(yaw_velocity)
       )
       return(cmd)
 
+  #-----------------------------------------------------------------------------
   def send_velocity_enu(self, vel_enu, heading):
     k = 100.
 #    def RBI_pprz(psi):
@@ -65,19 +67,21 @@ class Tello():
       while x < -np.pi :
         x += 2*np.pi
       return x
-      heading = norm_ang(heading)
-      V_err_enu = vel_enu - self.velocity_enu
-      R = RBI(self.heading)
-      V_err_xyz = R.dot(V_err_enu)
-      err_heading = norm_ang(norm_ang(heading) - self.heading)
-      self.send_rc_control(int(-V_err_xyz[1]*k),int(V_err_xyz[0]*k),int(V_err_xyz[2]*k), int(-err_heading*k))
 
+    heading = norm_ang(heading)
+    V_err_enu = vel_enu - self.velocity_enu
+    R = RBI(self.heading)
+    V_err_xyz = R.dot(V_err_enu)
+    err_heading = norm_ang(norm_ang(heading) - self.heading)
+    return(self.send_rc_control(int(-V_err_xyz[1]*k),int(V_err_xyz[0]*k),int(V_err_xyz[2]*k), int(-err_heading*k)))
+
+  #-----------------------------------------------------------------------------
   def fly_to_enu(self,position_enu, heading=None):
     if heading is None:
       heading = self.heading
-      pos_error = position_enu - self.position_enu
-      vel_enu = pos_error*1.2 - self.velocity_enu
-      return(self.send_velocity_enu(vel_enu, heading))
+    pos_error = position_enu - self.position_enu
+    vel_enu = pos_error*1.2 - self.velocity_enu
+    return(self.send_velocity_enu(vel_enu, heading))
 
 
 #------------------------------------------------------------------------------
@@ -112,34 +116,24 @@ class Thread_mission(threading.Thread):
     self.running = True
 
   def run(self):
-    for v in self.vehicles:
-      for t in self.tellos:
-        if v.ac_id == t.ac_id: t.update(v.position,v.velocity,v.heading)
 
-    print("in for")
-    for t in self.tellos: print(t.fly_to_enu(np.array([0.5, 3.5, 1.4]),0.))
-    print("out for")
+    for i in range(5):
+      if self.running:time.sleep(1)
 
+    if self.running: self.commands.put('takeoff')
+    for i in range(5):
+      if self.running:time.sleep(1)
 
+    for i in range(24):
+      if self.running:time.sleep(0.12)
+      for v in self.vehicles:
+        for t in self.tellos:
+          if v.ac_id == t.ac_id: 
+              print(v.position)
+              t.update(v.position,v.velocity,v.heading)
+              self.commands.put(t.fly_to_enu(np.array([0.5, 3.5, 1.4]),0.))
 
-#    for i in range(5):
-#      if self.running:time.sleep(1)
-#    if self.running: self.commands.put('takeoff')
-#
-#    for i in range(8):
-#      if self.running:time.sleep(1)
-#    if self.running: self.commands.put('up 100')
-#
-#    for i in range(8):
-#      if self.running:time.sleep(1)
-#    if self.running: 
-#      print(fly_to_enu(np.array([0.5, 3.5, 1.4]),0.))
-#        #self.commands.put('up 100')
-#      
-#
-#    for i in range(8):
-#      if self.running:time.sleep(1)
-#    if self.running: self.commands.put('land')
+    if self.running: self.commands.put('land')
 
     print("Thread mission stopped")
 

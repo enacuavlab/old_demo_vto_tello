@@ -218,7 +218,6 @@ class Natnet2python():
           if self.vehicles != None:
             for _v in self.vehicles:
               if _v.ac_id == str(ac_id) :
-                print(str(ac_id))
                 _v.position=(np.array([pos[0],pos[1],pos[2]]))
                 _v.velocity=(np.array([vel[0],vel[1],vel[2]]))
                 _v.heading=heading
