@@ -12,8 +12,8 @@ def main():
   vehicles = []
   for i in ac_list:
     vehicles.append(Vehicle(str(i[1])))
-  for i in vehicles:
-    print(i.ac_id)
+  #for i in vehicles:
+  #  print(i.ac_id)
 
   #ac_list = [['63', '63', '192.168.1.63'],]
   ac_list = [['60', '60', '192.168.1.60'],]
@@ -21,6 +21,12 @@ def main():
   #ac_id_list.append(['888', '888']) # Add a moving target
   #vehicles = [Vehicle('60'),]
 
+  #print("ac_id_list:")
+  #print(ac_id_list)
+  print("---")
+  for i in vehicles:
+    print(i.ac_id)
+  print("---")
 
   voliere = Natnet2python(ac_id_list, vehicles, freq=40)
 
