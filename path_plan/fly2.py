@@ -9,8 +9,7 @@ import time
 import queue
 import subprocess
 import docker
-#import pygame
-#from djitellopy import TelloSwarm
+import pygame
 
 #ac_list = [['TELLO-F0B594',59,0,0,0],]
 ac_list = [['TELLO-ED4310',60,0,0,0],]
@@ -114,6 +113,12 @@ class Thread_mission(threading.Thread):
     self.commands = commands
     self.vehicles = vehicles
     self.tellos = tellos
+    pygame.init()
+    pygame.joystick.init()
+    self.joystick_nr = pygame.joystick.get_count()
+    self.controller = [pygame.joystick.Joystick(x) for x in range(self.joystick_nr)]
+    for j in range(pygame.joystick.get_count()):self.controller[j].init()
+    self.joyst_target = np.zeros(3)
     self.running = True
 
   def run(self):
@@ -125,13 +130,22 @@ class Thread_mission(threading.Thread):
     for i in range(5):
       if self.running:time.sleep(1)
 
-    for i in range(60):
-      if self.running:time.sleep(0.1)
+    for i in range(100):
+      if self.running:
+        time.sleep(0.1)
+        event = pygame.event.poll()
+        if(event.type != pygame.QUIT):
+          for j in range(self.joystick_nr):
+            self.joyst_target[0] += 0.05*self.controller[j].get_axis(0)
+            self.joyst_target[1] += -0.05*self.controller[j].get_axis(1)
+            self.joyst_target[2] += 0.01*self.controller[j].get_axis(2)
+          self.joyst_target = np.clip(self.joyst_target,-3.,3.)
+          print(self.joyst_target)
       for v in self.vehicles:
         for t in self.tellos:
           if v.ac_id == t.ac_id: 
               t.update(v.position,v.velocity,v.heading)
-              self.commands.put(t.fly_to_enu(np.array([1.0, -2.0, 1.0]),0.))
+              self.commands.put(t.fly_to_enu(np.array([self.joyst_target[0],self.joyst_target[1],1.0]),0.))
 
     if self.running: self.commands.put('land')
 
@@ -208,7 +222,14 @@ def main():
     for j in ac_list: j[4].sendto("land".encode(encoding="utf-8"),(j[2],j[3]))
     time.sleep(1)
     for j in ac_list: j[4].close()
+    pygame.quit()
     print("mainloop stopped")
+
+#  pygame.display.init()
+#  pygame.joystick.init()
+#  joystick_nr = pygame.joystick.get_count()
+#  controller = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+#  for j in range(pygame.joystick.get_count()): controller[j].init()
 
 #------------------------------------------------------------------------------
 if __name__=="__main__":
