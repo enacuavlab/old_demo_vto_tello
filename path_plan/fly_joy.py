@@ -28,8 +28,8 @@ class Tello():
   def update(self,position,velocity,heading):
     self.position_enu = position
     self.velocity_enu = velocity
-    angle = heading - np.pi / 2    
-    self.heading = np.arctan2(np.sin(angle), np.cos(angle))
+    angle = heading - np.pi / 2
+    self.heading = -np.arctan2(np.sin(angle), np.cos(angle))
 
   #-----------------------------------------------------------------------------
   def send_rc_control(self, left_right_velocity: int, forward_backward_velocity: int, up_down_velocity: int, yaw_velocity: int):
@@ -130,7 +130,7 @@ class Thread_mission(threading.Thread):
     for i in range(5):
       if self.running:time.sleep(1)
 
-    for i in range(100):
+    for i in range(800):
       if self.running:
         time.sleep(0.1)
         event = pygame.event.poll()
@@ -140,7 +140,6 @@ class Thread_mission(threading.Thread):
             self.joyst_target[1] += -0.05*self.controller[j].get_axis(1)
             self.joyst_target[2] += 0.01*self.controller[j].get_axis(2)
           self.joyst_target = np.clip(self.joyst_target,-3.,3.)
-          print(self.joyst_target)
       for v in self.vehicles:
         for t in self.tellos:
           if v.ac_id == t.ac_id: 
@@ -224,12 +223,6 @@ def main():
     for j in ac_list: j[4].close()
     pygame.quit()
     print("mainloop stopped")
-
-#  pygame.display.init()
-#  pygame.joystick.init()
-#  joystick_nr = pygame.joystick.get_count()
-#  controller = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
-#  for j in range(pygame.joystick.get_count()): controller[j].init()
 
 #------------------------------------------------------------------------------
 if __name__=="__main__":

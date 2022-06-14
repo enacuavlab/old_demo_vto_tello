@@ -30,7 +30,7 @@ class Tello():
     self.position_enu = position
     self.velocity_enu = velocity
     angle = heading - np.pi / 2    
-    self.heading = np.arctan2(np.sin(angle), np.cos(angle))
+    self.heading = -np.arctan2(np.sin(angle), np.cos(angle))
 
   #-----------------------------------------------------------------------------
   def send_rc_control(self, left_right_velocity: int, forward_backward_velocity: int, up_down_velocity: int, yaw_velocity: int):
@@ -125,13 +125,13 @@ class Thread_mission(threading.Thread):
     for i in range(5):
       if self.running:time.sleep(1)
 
-    for i in range(60):
+    for i in range(80):
       if self.running:time.sleep(0.1)
       for v in self.vehicles:
         for t in self.tellos:
           if v.ac_id == t.ac_id: 
               t.update(v.position,v.velocity,v.heading)
-              self.commands.put(t.fly_to_enu(np.array([1.0, -2.0, 1.0]),0.))
+              self.commands.put(t.fly_to_enu(np.array([1.0, 0.0, 1.0]),0.))
 
     if self.running: self.commands.put('land')
 
@@ -193,7 +193,7 @@ def main():
     while True:
       while not commands.empty():
         msg=commands.get()
-        print("Sending <"+msg+">")
+        #print("Sending <"+msg+">")
         for j in ac_list: j[4].sendto(msg.encode(encoding="utf-8"),(j[2],j[3]))
 
       time.sleep(0.1)
