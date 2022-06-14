@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from natnet2python import Natnet2python
-from natnet2python import Vehicle
+from natnet2python import Rigidbody
 import numpy as np
 import socket
 import select
@@ -108,10 +108,10 @@ class Thread_batt(threading.Thread):
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Thread_mission(threading.Thread):
-  def __init__(self,commands,vehicles,tellos):
+  def __init__(self,commands,rigidbodies,tellos):
     threading.Thread.__init__(self)
     self.commands = commands
-    self.vehicles = vehicles
+    self.rigidbodies = rigidbodies
     self.tellos = tellos
     pygame.init()
     pygame.joystick.init()
@@ -140,7 +140,7 @@ class Thread_mission(threading.Thread):
             self.joyst_target[1] += -0.05*self.controller[j].get_axis(1)
             self.joyst_target[2] += 0.01*self.controller[j].get_axis(2)
           self.joyst_target = np.clip(self.joyst_target,-3.,3.)
-      for v in self.vehicles:
+      for v in self.rigidbodies:
         for t in self.tellos:
           if v.ac_id == t.ac_id: 
               t.update(v.position,v.velocity,v.heading)
@@ -182,19 +182,19 @@ def main():
 
   ac_id_list = [[str(_[1]),str(_[1])] for _ in ac_list]
 
-  vehicles = [];tellos = []
+  rigidbodies = [];tellos = []
   for i in ac_list: 
-    vehicles.append(Vehicle(str(i[1])))
+    rigidbodies.append(Rigidbody(str(i[1])))
     tellos.append(Tello(str(i[1])))
 
-  threadOpt = Natnet2python(ac_id_list, vehicles, freq=40)
+  threadOpt = Natnet2python(ac_id_list, rigidbodies, freq=40)
   threadOpt.run()
 
   threadBatt = Thread_batt(inout)
   threadBatt.start()
 
   commands = queue.Queue()
-  threadMission = Thread_mission(commands,vehicles,tellos)
+  threadMission = Thread_mission(commands,rigidbodies,tellos)
   threadMission.start()
 
 

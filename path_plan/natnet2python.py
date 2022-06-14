@@ -83,10 +83,10 @@ from NatNetClient import NatNetClient
 
 
 class Natnet2python():
-  def __init__(self, ac, vehicles, freq=20, server="127.0.0.1", dataport=int(1511), commandport=int(1510), vel_samples=int(4), verbose=False):
+  def __init__(self, ac, rigibodies, freq=20, server="127.0.0.1", dataport=int(1511), commandport=int(1510), vel_samples=int(4), verbose=False):
     self.freq = freq
     self.vel_samples = vel_samples
-    self.vehicles = vehicles
+    self.rigibodies = rigibodies
     # dictionary of ID associations
     self.id_dict = dict(ac)
     # initial time per AC
@@ -215,8 +215,8 @@ class Natnet2python():
           #    msg['course'] = 180. * np.arctan2(dcm_1_0, dcm_0_0) / 3.14
           heading = np.arctan2(dcm_1_0, dcm_0_0) 
 
-          if self.vehicles != None:
-            for _v in self.vehicles:
+          if self.rigibodies != None:
+            for _v in self.rigibodies:
               if _v.ac_id == str(ac_id) :
                 _v.position=(np.array([pos[0],pos[1],pos[2]]))
                 _v.velocity=(np.array([vel[0],vel[1],vel[2]]))
@@ -264,7 +264,7 @@ class Natnet2python():
 #              ivy.send(gr)
   
 
-class Vehicle():
+class Rigidbody():
   def __init__(self,ac_id):
     self.ac_id = ac_id
     self.position = np.zeros(3)
