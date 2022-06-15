@@ -88,33 +88,36 @@ class Vehicle():
     self.V_inf    = np.array([Vinf*np.cos(AoA), Vinf*np.sin(AoA)]) # Freestream velocity. AoA is measured from horizontal axis, cw (+)tive
     self.t = t_start
 
-  def Update_Velocity(self,flow_vels):
-    # K is vehicle speed coefficient, a design parameter
-    #flow_vels = flow_vels * self.velocitygain
-    #print(" flow vels " + str(flow_vels))
-    V_des = flow_vels
-    mag = np.linalg.norm(V_des)
-    V_des_unit = V_des/mag
-    V_des_unit[2] = 0 
-    mag = np.clip(mag, 0., 1.5)
-    mag_converted = mag # This is Tellos max speed 30Km/h
-    flow_vels2 = V_des_unit * mag_converted
-    #print(" flow vels2 " + str(flow_vels2))
-    flow_vels2 = flow_vels2 * self.velocitygain
-    self.position = np.array(self.position) + np.array(flow_vels2)  #+ [0.001, 0, 0]
-    self.path = np.vstack(( self.path,self.position ))
-    if np.linalg.norm(np.array(self.goal)-np.array(self.position)) < 0.1:
-      self.state = 1
-    return self.position
+#  def Update_Velocity(self,flow_vels):
+#    # K is vehicle speed coefficient, a design parameter
+#    #flow_vels = flow_vels * self.velocitygain
+#    #print(" flow vels " + str(flow_vels))
+#    V_des = flow_vels
+#    mag = np.linalg.norm(V_des)
+#    V_des_unit = V_des/mag
+#    V_des_unit[2] = 0 
+#    mag = np.clip(mag, 0., 1.5)
+#    mag_converted = mag # This is Tellos max speed 30Km/h
+#    flow_vels2 = V_des_unit * mag_converted
+#    #print(" flow vels2 " + str(flow_vels2))
+#    flow_vels2 = flow_vels2 * self.velocitygain
+#    self.position = np.array(self.position) + np.array(flow_vels2)  #+ [0.001, 0, 0]
+#    self.path = np.vstack(( self.path,self.position ))
+#    if np.linalg.norm(np.array(self.goal)-np.array(self.position)) < 0.1:
+#      self.state = 1
+#    return self.position
 
-  def Update_Position(self):
-    self.position = self.Velocity_Calculate(flow_vels)
+#  def Update_Position(self):
+#    self.position = self.Velocity_Calculate(flow_vels)
 
   def update(self,position,velocity,heading):
     self.position_enu = position
     self.velocity_enu = velocity
     angle = heading - np.pi / 2
     self.heading = -np.arctan2(np.sin(angle), np.cos(angle))
+
+    self.Set_Position(position)
+    self.Set_Velocity(velocity)
 
   #-----------------------------------------------------------------------------
   def send_rc_control(self, left_right_velocity: int, forward_backward_velocity: int, up_down_velocity: int, yaw_velocity: int):

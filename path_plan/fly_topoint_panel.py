@@ -60,7 +60,7 @@ class Thread_mission(threading.Thread):
     for i in range(5):
       if self.running:time.sleep(1)
 
-    for i in range(80):
+    for i in range(100):
       if self.running:time.sleep(0.1)
       for r in self.rigidbodies:
         for v in self.vehicles:
@@ -69,13 +69,15 @@ class Thread_mission(threading.Thread):
       flow_vels = Flow_Velocity_Calculation(self.vehicles,self.arena)
       for i, vehicle in enumerate(self.vehicles):
         norm = np.linalg.norm(flow_vels[i])
-        norm = np.linalg.norm(flow_vels[i])
+        flow_vels[i] = flow_vels[i]/norm
         limited_norm = np.clip(norm,0., 0.8)
-        fixed_speed = 1.
+        fixed_speed = 0.3
         vel_enu = flow_vels[i]*limited_norm
         heading = np.pi/2.
         v.Set_Desired_Velocity(vel_enu, method='None')
         self.commands.put(v.send_velocity_enu(v.velocity_desired, heading))
+        #self.commands.put(v.fly_to_enu(np.array([-3.5, 0.0, 1.0]),0.))
+
 
     if self.running: self.commands.put('land')
 
@@ -105,11 +107,12 @@ def init():
 #------------------------------------------------------------------------------
 def main():
 
+  print("Matrix computing, wait 13sec ...")
   arena = ArenaMap(version = 65)
   arena.Inflate(radius = 0.2)
   arena.Panelize(size=0.01)
   arena.Calculate_Coef_Matrix()
-
+  print("Matrix Computed")
   inout = []
   for j in ac_list:
     j[4]=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -123,7 +126,7 @@ def main():
     rigidbodies.append(Rigidbody(str(i[1])))
     vehicles.append(Vehicle(str(i[1])))
 
-  vehicle_goal_list = [([-3.5, 3, 1.4], 5, 0.00)]# goal,goal_strength all 5, safety 0.001 for V1 safety = 0 when there are sources
+  vehicle_goal_list = [([-3.5, 0., 1.4], 5, 0.00)]# goal,goal_strength all 5, safety 0.001 for V1 safety = 0 when there are sources
   vehicle_goto_goal_list =[[1.4,0,0,0] ] # altitude,AoA,t_start,Vinf=0.5,0.5,1.5
   for v in vehicles:
     v.Set_Goal(vehicle_goal_list[0][0],vehicle_goal_list[0][1],vehicle_goal_list[0][2])
@@ -148,7 +151,7 @@ def main():
     while True:
       while not commands.empty():
         msg=commands.get()
-        #print("Sending <"+msg+">")
+        print("Sending <"+msg+">")
         for j in ac_list: j[4].sendto(msg.encode(encoding="utf-8"),(j[2],j[3]))
 
       time.sleep(0.1)
