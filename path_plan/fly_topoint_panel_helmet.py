@@ -83,7 +83,7 @@ class Thread_mission(threading.Thread):
         limited_norm = np.clip(norm,0., 0.8)
         fixed_speed = 0.3
         vel_enu = flow_vels[i]*limited_norm
-        heading = np.pi/2.
+        heading = np.arctan2(target_pos[1]-v.position[1],target_pos[0]-v.position[0])
         v.Set_Desired_Velocity(vel_enu, method='None')
         self.commands.put(v.send_velocity_enu(v.velocity_desired, heading))
 
@@ -159,7 +159,7 @@ def main():
     while True:
       while not commands.empty():
         msg=commands.get()
-        print("Sending <"+msg+">")
+#        print("Sending <"+msg+">")
         for j in ac_list: j[4].sendto(msg.encode(encoding="utf-8"),(j[2],j[3]))
 
       time.sleep(0.1)
