@@ -170,10 +170,11 @@ class Natnet2python():
   
   def receiveRigidBodyList(self,rigidBodyList, stamp ):
       for (ac_id, pos, quat, valid) in rigidBodyList:
+         
           if not valid:
               # skip if rigid body is not valid
               continue
-  
+ 
           i = str(ac_id)
           if i not in self.id_dict.keys():
               continue

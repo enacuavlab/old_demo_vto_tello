@@ -17,7 +17,7 @@ import docker
 #ac_list = [['TELLO-F0B594',59,0,0,0],]
 ac_list = [['TELLO-ED4310',60,0,0,0],]
 #ac_list = [['TELLO-F0B594',59,0,0,0],['TELLO-ED4310',60,0,0,0]]
-moving_target = ['888']
+ac_target = ['888','888']
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -54,42 +54,41 @@ class Thread_mission(threading.Thread):
   def run(self):
     target_pos = np.zeros(3)
 
-#    for i in range(5):
-#      if self.running:time.sleep(1)
-#
-#    if self.running: self.commands.put('takeoff')
-#    for i in range(5):
-#      if self.running:time.sleep(1)
+    for i in range(5):
+      if self.running:time.sleep(1)
 
-    for i in range(100):
+    if self.running: self.commands.put('takeoff')
+    for i in range(5):
+      if self.running:time.sleep(1)
+
+    for i in range(800):
       if self.running:time.sleep(0.1)
+
       for r in self.rigidbodies:
-        print(r.ac_id)
-        print(r.position)
+        if r.ac_id == '888':
+          target_pos = r.position
 
-#        if r.ac_id == 888:
-#          target_pos = r.position
-#          print(target_pos)
-#        else:
-#          for v in self.vehicles:
-#            if r.ac_id == v.ID: 
-#              v.update(r.position,r.velocity,r.heading)
 #      for v in self.vehicles: v.Set_Next_Goal(target_pos)
-#      flow_vels = Flow_Velocity_Calculation(self.vehicles,self.arena)
-#      for i, vehicle in enumerate(self.vehicles):
-#        norm = np.linalg.norm(flow_vels[i])
-#        flow_vels[i] = flow_vels[i]/norm
-#        limited_norm = np.clip(norm,0., 0.8)
-#        fixed_speed = 0.3
-#        vel_enu = flow_vels[i]*limited_norm
-#        heading = np.pi/2.
-#        v.Set_Desired_Velocity(vel_enu, method='None')
-#        self.commands.put(v.send_velocity_enu(v.velocity_desired, heading))
+      for v in self.vehicles: v.Set_Goal(target_pos,5,0.0)
 
+      for r in self.rigidbodies:
+        for v in self.vehicles:
+          if r.ac_id == v.ID: 
+            v.update(r.position,r.velocity,r.heading)
 
-#    if self.running: self.commands.put('land')
+      flow_vels = Flow_Velocity_Calculation(self.vehicles,self.arena)
+      for i, vehicle in enumerate(self.vehicles):
+        norm = np.linalg.norm(flow_vels[i])
+        flow_vels[i] = flow_vels[i]/norm
+        limited_norm = np.clip(norm,0., 0.8)
+        fixed_speed = 0.3
+        vel_enu = flow_vels[i]*limited_norm
+        heading = np.pi/2.
+        v.Set_Desired_Velocity(vel_enu, method='None')
+        self.commands.put(v.send_velocity_enu(v.velocity_desired, heading))
 
-#    print("Thread mission stopped")
+    if self.running: self.commands.put('land')
+    print("Thread mission stopped")
 
 
 #------------------------------------------------------------------------------
@@ -130,18 +129,18 @@ def main():
   ac_id_list = [[str(_[1]),str(_[1])] for _ in ac_list]
 
   rigidbodies = [];vehicles = []
-  rigidbodies.append(Rigidbody(888))
+  rigidbodies.append(Rigidbody(str(ac_target[1])))
   for i in ac_list: 
     rigidbodies.append(Rigidbody(str(i[1])))
     vehicles.append(Vehicle(str(i[1])))
 
-  vehicle_goal_list = [([-3.5, 0., 1.4], 5, 0.00)]# goal,goal_strength all 5, safety 0.001 for V1 safety = 0 when there are sources
+#  vehicle_goal_list = [([-3.5, 0., 1.4], 5, 0.00)]# goal,goal_strength all 5, safety 0.001 for V1 safety = 0 when there are sources
   vehicle_goto_goal_list =[[1.4,0,0,0] ] # altitude,AoA,t_start,Vinf=0.5,0.5,1.5
   for v in vehicles:
-    v.Set_Goal(vehicle_goal_list[0][0],vehicle_goal_list[0][1],vehicle_goal_list[0][2])
+#    v.Set_Goal(vehicle_goal_list[0][0],vehicle_goal_list[0][1],vehicle_goal_list[0][2])
     v.Go_to_Goal(vehicle_goto_goal_list[0][0],vehicle_goto_goal_list[0][1],vehicle_goto_goal_list[0][2],vehicle_goto_goal_list[0][3])
 
-  threadOpt = Natnet2python(ac_id_list, rigidbodies, freq=20)
+  threadOpt = Natnet2python(ac_id_list + [ac_target], rigidbodies, freq=40)
   threadOpt.run()
 
   threadBatt = Thread_batt(inout)
