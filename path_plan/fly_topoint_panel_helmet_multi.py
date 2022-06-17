@@ -16,8 +16,11 @@ import docker
 
 #ac_list = [['TELLO-F0B594',65,0,0,0],]
 #ac_list = [['TELLO-ED4310',60,0,0,0],]
-ac_list = [['TELLO-F0B594',65,0,0,0],['TELLO-ED4310',60,0,0,0]]
+#ac_list = [['TELLO-F0B594',65,0,0,0],['TELLO-ED4310',60,0,0,0]]
+ac_list = [['TELLO-ED4310',60,0,0,0],['TELLO-F0B594',65,0,0,0]]
 ac_target = ['888','888']
+
+# BUG: ONLY THE LAST IS RC CONTROLED  !!
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -75,16 +78,18 @@ class Thread_mission(threading.Thread):
           if r.ac_id == v.ID: 
             v.update(r.position,r.velocity,r.heading)
 
-      flow_vels = Flow_Velocity_Calculation(self.vehicles,self.arena)
-      for i, vehicle in enumerate(self.vehicles):
-        norm = np.linalg.norm(flow_vels[i])
-        flow_vels[i] = flow_vels[i]/norm
-        limited_norm = np.clip(norm,0., 0.8)
-        fixed_speed = 0.3
-        vel_enu = flow_vels[i]*limited_norm
-        heading = np.arctan2(target_pos[1]-v.position[1],target_pos[0]-v.position[0])
-        v.Set_Desired_Velocity(vel_enu, method='None')
-        self.commands.put(v.send_velocity_enu(v.velocity_desired, heading),v.sock)
+            flow_vels = Flow_Velocity_Calculation(self.vehicles,self.arena)
+            for i, vehicle in enumerate(self.vehicles):
+              if (vehicle.ID == v.ID):
+
+                norm = np.linalg.norm(flow_vels[i])
+                flow_vels[i] = flow_vels[i]/norm
+                limited_norm = np.clip(norm,0., 0.8)
+                fixed_speed = 0.3
+                vel_enu = flow_vels[i]*limited_norm
+                heading = np.arctan2(target_pos[1]-v.position[1],target_pos[0]-v.position[0])
+                v.Set_Desired_Velocity(vel_enu, method='None')
+                self.commands.put((v.send_velocity_enu(v.velocity_desired, heading),v.ID))
 
     if self.running: self.commands.put(('land',))
     print("Thread mission stopped")
@@ -130,8 +135,10 @@ def main():
     i[4]=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     i[4].bind(('172.17.0.1',i[3]))
     inout.append(i[4])
+    print("",str(i[1]),i[4])
+
     rigidbodies.append(Rigidbody(str(i[1])))
-    vehicles.append(Vehicle(str(i[1]),i[4]))
+    vehicles.append(Vehicle(str(i[1])))
 
 
   vehicle_goto_goal_list =[[1.4,0,0,0] ] # altitude,AoA,t_start,Vinf=0.5,0.5,1.5
@@ -155,17 +162,14 @@ def main():
   try:
     while True:
       while not commands.empty():
-        vtupple=commands.get()
-        print("-------")
-        print(vtupple)
-        print("-------")
-#        if (len(vtupple)==2): 
-#            vtupple[1].sendto(vtupple[0].encode(encoding="utf-8"),(j[2],j[3]))
-#            print("unicast ",vtupple[0])
-#        else: 
-#            if(len(vtupple)==1): 
-#              for j in ac_list: j[4].sendto(vtupple[0].encode(encoding="utf-8"),(j[2],j[3]))
-#              print("vcast ",vtupple[0])
+        vtupple=commands.get(block=True)
+        if (len(vtupple)==2): 
+          for j in ac_list: 
+            if vtupple[1] == str(j[1]):
+              j[4].sendto(vtupple[0].encode(encoding="utf-8"),(j[2],j[3]))
+        else: 
+          for j in ac_list: 
+            j[4].sendto(vtupple[0].encode(encoding="utf-8"),(j[2],j[3]))
 
       time.sleep(0.1)
 
