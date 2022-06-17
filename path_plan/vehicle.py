@@ -7,16 +7,18 @@ from shapely.geometry import Point, Polygon
 from datetime import datetime
 from itertools import compress
 import time
+import socket
 
 import pdb
 
 class Vehicle():
-  def __init__(self,ID,source_strength = 0, imag_source_strength = 0.4):
+  def __init__(self,ID,sock,source_strength = 0, imag_source_strength = 0.4):
     self.position_enu = np.zeros(3)
     self.velocity_enu = np.zeros(3)
     self.heading = 0.
     self.last_rc_control_timestamp = time.time()
-
+  
+    self.sock            = sock
     self.altitude        = 0
     self.sink_strength   = 0
     self.V_inf           = np.zeros(3)
