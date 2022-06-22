@@ -14,10 +14,10 @@ import docker
 #import pygame
 #from djitellopy import TelloSwarm
 
-#ac_list = [['TELLO-F0B594',65,0,0,0],]
+ac_list = [['TELLO-F0B594',65,0,0,0],]
 #ac_list = [['TELLO-ED4310',60,0,0,0],]
 #ac_list = [['TELLO-F0B594',65,0,0,0],['TELLO-ED4310',60,0,0,0]]
-ac_list = [['TELLO-ED4310',60,0,0,0],['TELLO-F0B594',65,0,0,0]]
+#ac_list = [['TELLO-ED4310',60,0,0,0],['TELLO-F0B594',65,0,0,0]]
 ac_target = ['888','888']
 
 # BUG: ONLY THE LAST IS RC CONTROLED  !!
@@ -64,7 +64,7 @@ class Thread_mission(threading.Thread):
     for i in range(5):
       if self.running:time.sleep(1)
 
-    for i in range(60):
+    for i in range(1000):
       if self.running:time.sleep(0.1)
 
       for r in self.rigidbodies:
