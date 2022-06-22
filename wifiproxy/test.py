@@ -15,9 +15,9 @@ import docker
 #import pygame
 
 
-acDict = {60:[('TELLO-ED4310')],65:[('TELLO-F0B594')]}
+#acDict = {60:[('TELLO-ED4310')],65:[('TELLO-F0B594')]}
 #acDict = {60:[('TELLO-ED4310')]}
-#acDict = {65:[('TELLO-F0B594')]}
+acDict = {65:[('TELLO-F0B594')]}
 acTarg = [888,'Helmet']
 
 #------------------------------------------------------------------------------
@@ -108,17 +108,14 @@ class Thread_batt(threading.Thread):
     servDict = {} 
     for key in self.inoutDict.keys(): servDict[self.inoutDict[key][2]]=key
   
-    for elt in inoutList: print(elt)
-
     while self.running:
       try:
         ready_read, ready_write, exceptional = select.select(inoutList,[],[],None)
-        print("Get msg")
         for ready in ready_read:
           if self.running:
             data, server = ready.recvfrom(1024)
             batt=data.decode(encoding="utf-8")
-            print(servDict[server[1]],batt)
+            #print(str(servDict[server[1]])+" batt:"+str(batt))
       except socket.timeout:
         pass
 
@@ -198,6 +195,10 @@ def main(inoutDict):
 
 #------------------------------------------------------------------------------
 if __name__=="__main__":
+  print("---------------------------------------")
+  print("Tello will connected within 14 seconds")
+  print("if tello led do not blink pink, restart it !")
+  print("---------------------------------------")
   inoutDict = {}
   inout, ret = init(inoutDict)
   if(ret):main(inoutDict)
