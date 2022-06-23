@@ -15,10 +15,14 @@ import docker
 #import pygame
 
 
-#acDict = {60:[('TELLO-ED4310')],65:[('TELLO-F0B594')]}
+acDict = {60:[('TELLO-ED4310')],65:[('TELLO-F0B594')]}
 #acDict = {60:[('TELLO-ED4310')]}
-acDict = {65:[('TELLO-F0B594')]}
+#acDict = {65:[('TELLO-F0B594')]}
 acTarg = [888,'Helmet']
+
+optiFreq = 20
+telloFreq = 10
+telloSpeed = 0.3
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -32,7 +36,7 @@ class Rigidbody():
 
 
 class Natnet2python():
-  def __init__(self, rigidBodyDict, freq=20, server="127.0.0.1", dataport=int(1511), commandport=int(1510), vel_samples=int(4), verbose=False):
+  def __init__(self, rigidBodyDict, freq=optiFreq, server="127.0.0.1", dataport=int(1511), commandport=int(1510), vel_samples=int(4), verbose=False):
     self.freq = freq
     self.vel_samples = vel_samples
     self.rigidBodyDict = rigidBodyDict
@@ -132,19 +136,26 @@ class Thread_mission(threading.Thread):
     self.vehicles = vehicles
     self.arena = arena
     self.running = True
-    vehicle_goto_goal_list =[[1.4,0,0,0] ] # altitude,AoA,t_start,Vinf=0.5,0.5,1.5
-    for v in self.vehicles:
-      v.Go_to_Goal(vehicle_goto_goal_list[0][0],vehicle_goto_goal_list[0][1],vehicle_goto_goal_list[0][2],vehicle_goto_goal_list[0][3])
+    for v in self.vehicles: v.Go_to_Goal(1.4,0,0,0) # altitude,AoA,t_start,Vinf=0.5,0.5,1.5
 
 
   def run(self):
     target_pos = np.zeros(3)
 
-#    for i in range(5):  if self.running:time.sleep(1)
-#    if self.running: self.commands.put(('takeoff',))
-#    for i in range(5):  if self.running:time.sleep(1)
+    for i in range(5): 
+      if self.running:time.sleep(1)
+    if self.running: self.commands.put(('takeoff',))
+    for i in range(5):  
+      if self.running:time.sleep(1)
+
+    upLevel=0
+    for v in self.vehicles:
+      self.commands.put(("up "+str(upLevel),v.ID))
+      upLevel=upLevel+50
+
+    telloPeriod = 1/telloFreq
     for i in range(1000):
-      if self.running:time.sleep(0.1)
+      if self.running:time.sleep(telloPeriod)
       targetPos = self.rigidBodyDict[acTarg[0]].position
       for v in self.vehicles: 
         v.Set_Goal(targetPos,5,0.0)
@@ -154,12 +165,11 @@ class Thread_mission(threading.Thread):
         norm = np.linalg.norm(flow_vels[i])
         flow_vels[i] = flow_vels[i]/norm
         limited_norm = np.clip(norm,0., 0.8)
-        fixed_speed = 0.3
+        fixed_speed = telloSpeed
         vel_enu = flow_vels[i]*limited_norm
         heading = np.arctan2(targetPos[1]-v.position[1],targetPos[0]-v.position[0])
         v.Set_Desired_Velocity(vel_enu, method='None')
         self.commands.put((v.send_velocity_enu(v.velocity_desired, heading),v.ID))
-
 
     if self.running: self.commands.put(('land',))
     print("Thread mission stopped")
@@ -183,7 +193,10 @@ def init(inoutDict):
         inoutDict[key]=((ip,port))
   if inoutDict:
     for key in acDict.keys(): 
-      if(len(inoutDict[key]))==1: ret=False
+      if key in inoutDict: 
+        if(len(inoutDict[key]))==1: ret=False
+      else: ret=False
+
   else: ret=False
   return(inoutDict,ret)
 
@@ -225,28 +238,32 @@ def main(inoutDict):
     while True:
       while not commands.empty():
         vtupple=commands.get()
-        if (len(vtupple)==2):inoutDict[vtupple[1]].sendto(vtupple[0].encode(encoding="utf-8"),(inoutDict[ac][0],inoutDict[ac][1]))
+        if (len(vtupple)==2): 
+          print(vtupple[1],vtupple[0])
+          inoutDict[vtupple[1]][0].sendto(vtupple[0].encode(encoding="utf-8"),(inoutDict[vtupple[1]][1],inoutDict[vtupple[1]][2]))
         else:
-          for ac in acDict:
+          for ac in acDict: 
             inoutDict[ac][0].sendto(vtupple[0].encode(encoding="utf-8"),(inoutDict[ac][1],inoutDict[ac][2]))
+            print(ac,vtupple[0])
 
-      time.sleep(0.1)
+      time.sleep(0.01)
 
   except KeyboardInterrupt:
     print("\nWe are interrupting the program\n")
     time.sleep(1)
     threadOpt.stop()
-    threadBAtt.stop()
+    threadBatt.stop()
     for ac in acDict: inoutDict[ac][0].close()
     print("mainloop stopped")
 
 
 #------------------------------------------------------------------------------
 if __name__=="__main__":
-  print("---------------------------------------")
-  print("Tello will connected within 14 seconds")
-  print("if tello led do not blink pink, restart it !")
-  print("---------------------------------------")
   inoutDict = {}
   inout, ret = init(inoutDict)
-  if(ret):main(inoutDict)
+  if(ret):
+    print("---------------------------------------")
+    print("When Tello is started, it will connected within 14 seconds")
+    print("if tello led do not blink pink, restart it !")
+    print("---------------------------------------")
+    main(inoutDict)
