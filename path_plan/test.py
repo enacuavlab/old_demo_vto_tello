@@ -24,6 +24,8 @@ optiFreq = 20
 telloFreq = 10
 telloSpeed = 0.3
 
+sourceStrength = 0.95 # Tello repelance
+
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Rigidbody():
@@ -217,7 +219,7 @@ def main(inoutDict):
     sock.bind(('172.17.0.1',inoutDict[ac][1]))
     inoutDict[ac]=((sock,inoutDict[ac][0],inoutDict[ac][1]))
     rigidBodyDict[ac]=Rigidbody(ac)
-    vehicleList.append(Vehicle(ac))
+    vehicleList.append(Vehicle(ac,sourceStrength))
 
   threadBatt = Thread_batt(inoutDict)
   threadBatt.start()
