@@ -109,6 +109,11 @@ class Building():
                     TH1 = np.arctan2( ( y    ) , ( x    ) )
                     TH2 = np.arctan2( ( y-y2 ) , ( x-x2 ) )
 
+                    #R1 = ((XYZ1[m][0]-self.pcp[n][0])**2 + (XYZ1[m][1]-self.pcp[n][1])**2 )**0.5
+                    #R2 = ((XYZ2[m][0]-self.pcp[n][0])**2 + (XYZ2[m][1]-self.pcp[n][1])**2 )**0.5
+                    #T1 = np.arctan2((XYZ1[m][1]-self.pcp[n][1]),(XYZ1[m][0]-self.pcp[n][0])) + self.pb[m]
+                    #T2 = np.arctan2((XYZ2[m][1]-self.pcp[n][1]),(XYZ2[m][0]-self.pcp[n][0])) + self.pb[m]
+
                     # Compute Velocity in Local Ref. Frame
                     if m == n:
                         # Diagonal elements: Effect of a panel on itself.
@@ -155,9 +160,26 @@ class Building():
                                         / ( (self.pcp[m][0]-self.pcp[n][0] )**2 + (self.pcp[m][1] - self.pcp[n][1] )**2 ) )
             # Inverse of coefficient matrix: (Needed for solution of panel method eqn.)
             self.K_inv = np.linalg.inv(self.K)         
-   
+    '''
+    def vel_sink_calc(self,vehicle):
+    # Calculates velocity induced on each panel by a sink element.
+        vel_sink = np.zeros((self.nop,2)) 
+        for m in range(self.nop):
+            vel_sink[m,0] = (-vehicle.sink_strength*(self.pcp[m][0]-vehicle.goal[0]))/(2*np.pi*((self.pcp[m][0]-vehicle.goal[0])**2+(self.pcp[m][1]-vehicle.goal[1])**2))
+            vel_sink[m,1] = (-vehicle.sink_strength*(self.pcp[m][1]-vehicle.goal[1]))/(2*np.pi*((self.pcp[m][0]-vehicle.goal[0])**2+(self.pcp[m][1]-vehicle.goal[1])**2))
+        self.vel_sink[vehicle.ID] =  vel_sink   
 
-
+    def vel_source_calc(self,vehicle,othervehicles):
+    # Calculates velocity induced on each panel by source elements.
+        vel_source = np.zeros((self.nop,2)) 
+        for othervehicle in othervehicles:
+            for m in range(self.nop):
+                    vel_source[m,0] += (othervehicle.source_strength*(self.pcp[m][0]-othervehicle.position[0]))/(2*np.pi*((self.pcp[m][0]-othervehicle.position[0])**2+(self.pcp[m][1]-othervehicle.position[1])**2))
+                    vel_source[m,1] += (othervehicle.source_strength*(self.pcp[m][1]-othervehicle.position[1]))/(2*np.pi*((self.pcp[m][0]-othervehicle.position[0])**2+(self.pcp[m][1]-othervehicle.position[1])**2))
+        self.vel_source[vehicle.ID] =  vel_source 
+        
+    '''
+    
     def gamma_calc(self,vehicle,othervehicles,arenamap,method = 'Vortex'):
     # Calculates unknown vortex strengths by solving panel method eq.  
         #cycletime = datetime.now()
@@ -195,6 +217,25 @@ class Building():
                                     #-2                * np.cos(self.pb[m])  \
                                     #-0                * np.sin(self.pb[m])#\
 
+            #for m in range(self.nop):
+                # Calculates velocity induced on each panel by a sink element.
+                
+                
+
+                #currenttime = datetime.now()
+                #print( " Calculations for panel " + str(m) + " sink:"   + str(currenttime - cycletime ) )
+                # Calculates velocity induced on each panel by source elements.
+                
+                # Right Hand Side of panel method eq.
+                    # Normal comp. of freestream +  Normal comp. of velocity induced by sink + Normal comp. of velocity induced by sources
+                #currenttime = datetime.now()
+                #print( " Calculations for panel " + str(m) + " sources:"   + str(currenttime - cycletime ) )
+
+
+                
+
+                #currenttime = datetime.now()
+                #print( " Calculations for panel " + str(m) + " rhs:"   + str(currenttime - cycletime ) )
             self.gammas[vehicle.ID] = np.matmul(self.K_inv,RHS)
         elif method == 'Source':
             for m in range(self.nop):
@@ -217,3 +258,6 @@ class Building():
                                     -arenamap.windT * arenamap.wind[0] * np.cos(self.pb[m] + (np.pi/2)) \
                                     -arenamap.windT * arenamap.wind[1] * np.sin(self.pb[m] + (np.pi/2)) + vehicle.safety
             self.gammas[vehicle.ID] = np.matmul(self.K_inv,RHS)      
+            
+        #currenttime = datetime.now()
+        #print( " Calculations for panel  gammas:"   + str(currenttime - cycletime ) )

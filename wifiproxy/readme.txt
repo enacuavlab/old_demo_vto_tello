@@ -38,7 +38,7 @@ docker exec -it TELLO-ED4310 /bin/bash
 ./runtello.py TELLO-ED4310
 
 # Run video stream on port define in drone configuration launcher file (TELLO-ED4310.sh)
-gst-launch-1.0 -v udpsrc port=11112 caps="video/x-h264, stream-format=(string)byte-stream" ! decodebin ! videoconvert ! autovideosink sync=false
+gst-launch-1.0 -v udpsrc port=11115 caps="video/x-h264, stream-format=(string)byte-stream" ! decodebin ! videoconvert ! autovideosink sync=false
 
 ---------------------------------------
 # Kill docker container for each drone
