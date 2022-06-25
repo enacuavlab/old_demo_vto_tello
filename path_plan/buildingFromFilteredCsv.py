@@ -5,23 +5,19 @@ import csv
 filename = "testFiltered.csv"
 
 buildings = {}
-markers = {}
 
 if __name__ == '__main__':
   with open(filename, newline='') as csvfile:
-#   csvreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     csvreader = csv.reader(csvfile)
     fields = next(csvreader)
     values = next(csvreader)
-    #for row in csvreader: row.append(row)
-    for index in range(0,len(fields),3):
-      buildingName,markerName  = fields[index].split(':')
-      if building is {}: 
-      print(buildingName)
-
-#      markers[fields[index]]=(values[index:index+2])
-#   for elt in markers: print(elt)  
-#    print(fields)
-#    print(values)
-    #print('Field names are:' + ', '.join(field for field in fields))
-    #print('Field names are:' + ', '.join(values for value in values))
+    for i in range(0,len(fields),3):
+      buildingName,markerName  = fields[i].split(':')
+      floatLst=[float(x)/1000.0 for x in values[i:i+3]]
+      if (not buildings) or (not buildingName in buildings): buildings[buildingName]={markerName:floatLst}
+      buildings[buildingName].update({markerName:floatLst})
+    for item1 in buildings.items(): 
+      print(item1[0])
+      for item2 in item1[1].items(): 
+        print(item2[0])
+        print(item2[1])
