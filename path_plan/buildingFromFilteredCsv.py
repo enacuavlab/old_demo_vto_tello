@@ -9,6 +9,12 @@ filename = "testFiltered.csv"
 
 buildings = {}
 
+def display(pts):
+  plt.text(pts[0][0],0.7+pts[0][1],item1[0],fontsize=12)
+  for i,elt in enumerate(pts[:-1]): plt.plot([pts[i][0],pts[i+1][0]],[pts[i][1],pts[i+1][1]],color='red')
+  plt.plot([pts[0][0],pts[len(pts)-1][0]],[pts[0][1],pts[len(pts)-1][1]],color='red')
+
+
 def clocked(pts):
   angles = []
   (x0,y0)=(0,0)
@@ -40,9 +46,6 @@ if __name__ == '__main__':
       for i,item2 in enumerate(item1[1].items()):
         pts[i] = np.array(item2[1][0:2])
       clocked(pts)
-      if(item1[0] == 'Building_884'): 
-        for i,elt in enumerate(pts[:-1]): plt.plot([pts[i][0],pts[i+1][0]],[pts[i][1],pts[i+1][1]],color='red')
-        plt.plot([pts[0][0],pts[len(pts)-1][0]],[pts[0][1],pts[len(pts)-1][1]],color='red')
-
+      display(pts)
 
   plt.show()
