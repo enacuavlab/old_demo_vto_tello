@@ -13,7 +13,6 @@ filename = "testFiltered.csv"
 class Building():
   def __init__(self,vertices): # Buildings(obstacles) are defined by coordinates of their vertices.
     self.vertices = vertices
-    
     panels = np.array([])
     rad = 0.2
     safetyfac = 1.1
@@ -33,7 +32,6 @@ class Building():
     self.vertices = points_sorted
     self.gammas = {}           # Vortex Strenghts
     self.K_inv = None
-
 
     size=0.01 # Panelize
     for index,vertice in enumerate(self.vertices): # Divides obstacle edges into smaller line segments, called panels.
@@ -212,10 +210,13 @@ def Flow_Velocity_Calculation(vehicles,buildings):
   return flow_vels
 
 #--------------------------------------------------------------------------------
-def display(name,pts):
+def display(name,pts,ofs):
   plt.text(pts[0][0],0.7+pts[0][1],name,fontsize=12)
-  for i,elt in enumerate(pts[:-1]): plt.plot([pts[i][0],pts[i+1][0]],[pts[i][1],pts[i+1][1]],color='red')
-  plt.plot([pts[0][0],pts[len(pts)-1][0]],[pts[0][1],pts[len(pts)-1][1]],color='red')
+  for i,elt in enumerate(pts[:-1]): 
+    plt.plot([pts[i][0],pts[i+1][0]],[pts[i][1],pts[i+1][1]],color='blue')
+    plt.plot([ofs[i][0],ofs[i+1][0]],[ofs[i][1],ofs[i+1][1]],color='red')
+  plt.plot([pts[0][0],pts[len(pts)-1][0]],[pts[0][1],pts[len(pts)-1][1]],color='blue')
+  plt.plot([ofs[0][0],ofs[len(ofs)-1][0]],[ofs[0][1],ofs[len(ofs)-1][1]],color='red')
 
 
 def clocked(pts):
@@ -249,23 +250,12 @@ def init(buildingList):
       pts = np.empty((len(item1[1].items()),2))
       for i,item2 in enumerate(item1[1].items()): pts[i] = np.array(item2[1][0:2])
       clocked(pts) 
-      vertices = np.empty((len(item1[1].items()),3))
-      for i,item2 in enumerate(item1[1].items()): vertices[i] = (pts[i][0],pts[i][1],4.2)
+      verts = np.empty((len(item1[1].items()),3))
+      for i,item2 in enumerate(item1[1].items()): verts[i] = (pts[i][0],pts[i][1],4.2)
       print(item1[0])
-      buildingList.append(Building(vertices))
-      display(item1[0],pts)
-
-
-#def init_test(buildingList):
-#  buildings = [([[3.0, 2.0, 4.2], [2.75, 1.567, 4.2], [2.25, 1.567, 4.2], [2.0, 2.0, 4.2], [2.25, 2.433, 4.2], [2.75, 2.433, 4.2]]),
-#               ([[1.0, 3.0, 4.5], [0.75, 2.567, 4.5], [0.25, 2.567, 4.5], [0.0, 3.0, 4.5], [0.25, 3.433, 4.5], [0.75, 3.433, 4.5]]), 
-#               ([[1.0, 0.5, 4], [0.75, 0.067, 4], [0.25, 0.067, 4], [0.0, 0.5, 4], [0.25, 0.933, 4], [0.75, 0.933, 4]]), 
-#               ([[-2.65, 1.5, 4.5], [-3.0, 1.15, 4.5], [-3.35, 1.5, 4.5], [-3.0, 1.85, 4.5]]),
-#               ([[-2.65, -1.5, 4.5], [-3.0, -1.85, 4.5], [-3.35, -1.5, 4.5], [-3.0, -1.15, 4.5]]),
-#               ([[-1.15, -0.2, 4.5], [-1.5, -0.55, 4.5], [-1.85, -0.2, 4.5], [-1.5, 0.15, 4.5]]), 
-#               ([[1.5, -2.5, 4.2], [1, -2.5, 4.2], [1, -1.4, 4.2], [1.5, -1, 4.2]]),
-#               ([[3.5, -2.5, 4.2], [3, -2.5, 4.2], [3, -1, 4.2], [3.5, -1.4, 4.2]])]
-#  for b in buildings: buildingList.append(Building(np.array(b)))
+      b = Building(verts)
+      buildingList.append(b)
+      display(item1[0],pts,b.vertices)
 
 
 def run(buildingList):
@@ -285,13 +275,13 @@ def run(buildingList):
   vehicleList[0].Set_Velocity([0,0,0])
   vehicleList[1].Set_Velocity([0,0,0])
 
-  plt.plot(vehicleList[0].position[0],vehicleList[0].position[1],color='red',marker='o',markersize=12)
-  plt.plot(vehicleList[1].position[0],vehicleList[1].position[1],color='red',marker='o',markersize=12)
-  plt.plot(targetPos[0],targetPos[1],color='green',marker='o',markersize=12)
-
-  
   flow_vels = Flow_Velocity_Calculation(vehicleList,buildingList)
-  print(flow_vels)
+
+  plt.plot(targetPos[0],targetPos[1],color='green',marker='o',markersize=12)
+  for i,v in enumerate(vehicleList):
+    plt.plot(vehicleList[i].position[0],vehicleList[i].position[1],color='red',marker='o',markersize=12)
+    vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
+    plt.arrow(vehicleList[i].position[0],vehicleList[i].position[1],vspeed[0],vspeed[1], fc="k", ec="k",head_width=0.05, head_length=0.1 )
 
 
 #--------------------------------------------------------------------------------
