@@ -15,9 +15,14 @@ do
   /usr/bin/socat udp-recv:11111,bind=$WIFI_IP udp-sendto:172.17.0.1:$VID_PORT &>/dev/null &
 
   DOCKER_IP=$(ip a | grep eth0 | pcregrep -o1 'inet ([0-9]+.[0-9]+.[0-9]+.[0-9]+)')
+  sleep 2
   /minitest.py $DOCKER_IP $CMD_PORT &> /dev/null &
 
-  while timeout 0.5 ping -c 1 -n 192.168.10.1 &> /dev/null; do sleep 0.5; done
+  #while timeout 0.5 ping -c 1 -n 192.168.10.1 &> /dev/null; do sleep 0.5; done
+  REACHEABLE=0;
+  while [ $REACHEABLE -ne "1" ];
+    do ping -q -c 1 -w 2 192.168.10.1 &> /dev/null; REACHEABLE=$?; sleep 1;
+  done
 
   pkill socat > /dev/null 2>&1
   pkill minitest.py > /dev/null 2>&1

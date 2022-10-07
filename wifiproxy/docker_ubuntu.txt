@@ -1,0 +1,25 @@
+--------------------------------------------
+Install docker on Ubuntu 20.04
+
+sudo apt update
+sudo apt install apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+sudo apt update
+apt-cache policy docker-ce
+sudo apt install docker-ce
+sudo systemctl status docker
+
+--------------------------------------------
+Install configure proxy for docker
+
+sudo mkdir /etc/systemd/system/docker.service.d
+sudo vi  /etc/systemd/system/docker.service.d/http-proxy.conf
+"
+[Service]
+Environment="HTTP_PROXY=http://squid:3128/"
+Environment="HTTPS_PROXY=http://squid:3128/"
+Environment="NO_PROXY="localhost,127.0.0.1,::1"
+"
+sudo systemctl daemon-reload
+sudo systemctl restart docker

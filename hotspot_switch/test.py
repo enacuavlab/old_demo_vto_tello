@@ -3,6 +3,8 @@ import socket
 import threading
 import time
 
+#ap ssid pass
+#ap pprz_router pprzpprz
 
 host = ''
 port = 9000

@@ -1,0 +1,7 @@
+
+Factory Reset of Ryze Tello Drone
+
+    Switch on the Ryze Tello drone and wait for the LEDs to flash yellow.
+
+    Long press the power button for 5 seconds until the indicator light turns off. The indicator light starts to flash yellow. 
+    The Wi-Fi SSID and password will be reset to the factory settings and no password is set by default.
