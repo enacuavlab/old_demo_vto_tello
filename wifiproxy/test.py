@@ -115,7 +115,7 @@ class Thread_batt(threading.Thread):
           if self.running:
             data, server = ready.recvfrom(1024)
             batt=data.decode(encoding="utf-8")
-            #print(str(servDict[server[1]])+" batt:"+str(batt))
+            print(str(servDict[server[1]])+" batt:"+str(batt))
       except socket.timeout:
         pass
 

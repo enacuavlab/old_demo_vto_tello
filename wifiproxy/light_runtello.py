@@ -9,47 +9,6 @@ import docker
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class thread_startup(threading.Thread):
-  def __init__(self,commands):
-    threading.Thread.__init__(self)
-    self.commands = commands
-    self.running = True
-
-  def run(self):
-    if self.running:
-#      self.commands.put('command')
-      self.commands.put('streamon')
-      self.commands.put('downvision 0')
-    print("Thread startup stopped")
-
-
-#------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-class thread_mission(threading.Thread):
-  def __init__(self,commands):
-    threading.Thread.__init__(self)
-    self.commands = commands
-    self.running = True
-
-  def run(self):
-
-    for i in range(5):
-      if self.running:time.sleep(1)
-    if self.running: self.commands.put('takeoff')
-
-    for i in range(8):
-      if self.running:time.sleep(1)
-    if self.running: self.commands.put('up 100')
-
-    for i in range(8):
-      if self.running:time.sleep(1)
-    if self.running: self.commands.put('land')
-
-    print("Thread mission stopped")
-
-
-#------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
 class thread_batt(threading.Thread):
   def __init__(self,sock):
     threading.Thread.__init__(self)
@@ -79,16 +38,12 @@ def main(docker_ip,cmd_port):
 
   tello_add=(docker_ip,cmd_port)
 
-  commands = queue.Queue()
-  commands.put('command')
-
   threadBatt = thread_batt(sock)
-  threadStart = thread_startup(commands)
-  threadMission = thread_mission(commands)
-
   threadBatt.start()
-  threadStart.start()
-  threadMission.start()
+
+  commands = queue.Queue()
+  commands.put('streamon')
+  commands.put('downvision 0')
 
   try:
     while True:
@@ -102,8 +57,6 @@ def main(docker_ip,cmd_port):
 
   except KeyboardInterrupt:
     print("\nWe are interrupting the program\n")
-    threadMission.running = False
-    threadStart.running = False
     threadBatt.running = False
     time.sleep(1)
     sock.close()
