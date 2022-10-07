@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import matplotlib.pyplot as plt
+import json
 import csv
 import math
 import copy
@@ -7,7 +8,14 @@ import pyclipper
 import numpy as np
 from itertools import compress
 
-filename = "testFiltered.csv"
+# OPTITRACK Motive
+#   Export extracting data
+#     Axis Convention : Custom
+#       X Axis : Left(X+)
+#       Y Axis : Backward(Z-)
+#       Z Axis : Up(Y+)
+
+filename = "testFiltered_bis.csv"
 
 #--------------------------------------------------------------------------------
 class Building():
@@ -271,6 +279,7 @@ def run(buildingList):
   vehicleList[0].Set_Goal(targetPos,5,0.0)
   vehicleList[1].Set_Goal(targetPos,5,0.0)
   vehicleList[0].Set_Position([-4,4,0])
+#  vehicleList[0].Set_Position([0,1,0])
   vehicleList[1].Set_Position([-4,-4,0])
   vehicleList[0].Set_Velocity([0,0,0])
   vehicleList[1].Set_Velocity([0,0,0])
@@ -284,9 +293,40 @@ def run(buildingList):
     plt.arrow(vehicleList[i].position[0],vehicleList[i].position[1],vspeed[0],vspeed[1], fc="k", ec="k",head_width=0.05, head_length=0.1 )
 
 
+def export(buildingList):
+  data = {} 
+  for index,building in enumerate(buildingList): 
+    data[index] = (building.vertices.tolist(),building.pcp.tolist(),building.pb.tolist(),building.nop,building.K_inv.tolist())
+  with open("matrix.json", "w") as outfile: json.dump(data, outfile)
+  outfile.close()
+
+#  for building in buildingList:
+#    print(building.vertices)
+#    print(building.pcp)
+#    print(building.pb)
+
+  retmat = {}
+  with open("matrix.json", "r") as infile: retmat = json.load(infile)
+  infile.close()
+
+  buildingListOut = []
+  for val1, val2, val3, val4, val5 in retmat.values(): 
+    b = Building(np.array(val1))
+    b.vertices = np.array(val1) # udpate vertices
+    b.pcp = np.array(val2)
+    b.pb = np.array(val3)
+    b.nop = val4
+    b.K_inv = np.array(val5)
+    buildingListOut.append(b)
+
+  return(buildingListOut)
+
+
 #--------------------------------------------------------------------------------
 if __name__ == '__main__':
   buildingList = []
   init(buildingList)
+  mybuildingList=export(buildingList)
+#  run(mybuildingList)
   run(buildingList)
   plt.show()
