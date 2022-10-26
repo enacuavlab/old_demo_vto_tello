@@ -15,10 +15,10 @@ import docker
 #import pygame
 
 
-acDict = {65:[('TELLO-F0B594')],60:[('TELLO-ED4310')]}
+#acDict = {65:[('TELLO-F0B594')],60:[('TELLO-ED4310')]}
 #acDict = {60:[('TELLO-ED4310')],65:[('TELLO-F0B594')]}
 #acDict = {60:[('TELLO-ED4310')]}
-#acDict = {65:[('TELLO-F0B594')]}
+acDict = {65:[('TELLO-F0B594')]}
 acTarg = [888,'Helmet']
 
 optiFreq = 20
