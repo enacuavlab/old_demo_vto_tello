@@ -60,12 +60,55 @@ import numpy as np
 
 #--------------------------------------------------------------------------------
 Vector3 = struct.Struct( '<fff' )
+Quaternion = struct.Struct( '<ffff' )
 
 def natnet_parse(in_socket,buildings):
   data=bytearray(0)
   # 64k buffer size
   recv_buffer_size=64*1024
   data, addr = in_socket.recvfrom( recv_buffer_size )
+  if len( data ) > 0 :
+    message_id = int.from_bytes( data[0:2], byteorder='little' )
+    packet_size = int.from_bytes( data[2:4], byteorder='little' )
+    if message_id == 7 : # NAT_FRAMEOFDATA :
+      offset = 4
+      frame_number = int.from_bytes( data[offset:offset+4], byteorder='little' )
+      offset += 4
+      marker_set_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
+      offset += 4
+      for i in range( 0, marker_set_count ):
+        model_name, separator, remainder = bytes(data[offset:]).partition( b'\0' )
+        offset += len( model_name ) + 1
+        buildingName = model_name.decode( 'utf-8' )
+        print("Model name: ",buildingName)
+        marker_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
+        offset += 4
+        #print( "Marker Count    : ", marker_count )
+        for j in range( 0, marker_count ):
+          floatLst = Vector3.unpack( data[offset:offset+12] )
+          offset += 12
+
+      unlabeled_markers_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
+      offset += 4
+      for i in range( 0, unlabeled_markers_count ):
+        pos = Vector3.unpack( data[offset:offset+12] )
+        offset += 12
+
+      rigid_body_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
+      offset += 4
+
+      for i in range( 0, rigid_body_count ):
+        # ID (4 bytes)
+        new_id = int.from_bytes( data[offset:offset+4], byteorder='little' )
+        offset += 4
+        pos = Vector3.unpack( data[offset:offset+12] )
+        offset += 12
+        print( "\tPosition    : [%3.2f, %3.2f, %3.2f]"% (pos[0], pos[1], pos[2] ))
+        rot = Quaternion.unpack( data[offset:offset+16] )
+        offset += 16
+        print( "\tOrientation : [%3.2f, %3.2f, %3.2f, %3.2f]"% (rot[0], rot[1], rot[2], rot[3] ))
+
+
 
 
 def natnet_get(buildingList):
