@@ -5,9 +5,12 @@ import argparse
 import numpy as np
 from common import Building
 
+
 #--------------------------------------------------------------------------------
 
 # ./genmatrix.py -i outputfromtake.csv -o outputfromtake.json
+# or
+# ./genmatrix.py -i outputfromnatnet.csv -o outputfromnatnet.json
 
 #--------------------------------------------------------------------------------
 def storenonaligned(pointDES, pointSRC, pointA, buildings, key1, key2):
@@ -62,11 +65,13 @@ if __name__ == '__main__':
   buildingList = []
   for itemA in buildings.items():
     verts = np.empty((len(itemA[1]),3),dtype=float)
-    for i,itemB in enumerate(itemA[1].items()): verts[i] = itemB[1]
-    buildingList.append(Building(verts))
+    for i,itemB in enumerate(itemA[1].items()): 
+      for j in range(3):verts[i][j] = itemB[1][j]*1000.0
+    buildingList.append(Building(itemA[0],verts))
 
   data = {}
   for index,building in enumerate(buildingList):
-    data[index] = (building.vertices.tolist(),building.pcp.tolist(),building.pb.tolist(),building.nop,building.K_inv.tolist())
+    data[index] = (building.name,building.vertices.tolist(),building.pcp.tolist(),building.pb.tolist(),
+                   building.nop,building.K_inv.tolist())
   with open(args.output_jsonmatrix, "w") as outfile: json.dump(data, outfile)
   outfile.close()

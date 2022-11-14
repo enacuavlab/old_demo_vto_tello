@@ -15,7 +15,7 @@ from itertools import compress
 #       Y Axis : Backward(Z-)
 #       Z Axis : Up(Y+)
 
-filename = "testFiltered_02.csv"
+filename = "testFiltered_00_a.csv"
 
 #--------------------------------------------------------------------------------
 class Building():

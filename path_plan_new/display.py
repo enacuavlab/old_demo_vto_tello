@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 #--------------------------------------------------------------------------------
 
 # ./display.py -i outputfromtake.json
+# or 
+# ./display.py -i outputfromnatnet.json
 
 #--------------------------------------------------------------------------------
 def display(name,pts,ofs):
@@ -33,24 +35,14 @@ if __name__ == '__main__':
     with open(args.input_jsonmatrix, "r") as infile: retmat = json.load(infile)
     infile.close()
 
-    buildingList = []
-    for val1, val2, val3, val4, val5 in retmat.values():
-      b = Building(np.array(val1))
-      b.vertices = np.array(val1) # udpate vertices
-      b.pcp = np.array(val2)
-      b.pb = np.array(val3)
-      b.nop = val4
-      b.K_inv = np.array(val5)
-      buildingList.append(b)
-
     plt.xlim(-5, 5)
     plt.ylim(-5, 5)
     plt.grid()
 
-    for index,building in enumerate(buildingList):
-      print(index[0])
-      print(building.vertices)
-#    for item1 in buildings.items():
-#      display(item1[0],pts,b.vertices)
+    for val0, val1, val2, val3, val4, val5 in retmat.values():
+      b = Building(val0,np.array(val1))
+      pts = b.vertices
+      b.vertices = np.array(val1) # udpate vertices
+      display(val0,pts,b.vertices)
 
-
+    plt.show()

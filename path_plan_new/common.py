@@ -6,7 +6,8 @@ import math
 
 #--------------------------------------------------------------------------------
 class Building():
-  def __init__(self,vertices): # Buildings(obstacles) are defined by coordinates of their vertices.
+  def __init__(self,name,vertices): # Buildings(obstacles) are defined by coordinates of their vertices.
+    self.name = name
     self.vertices = vertices
     panels = np.array([])
     rad = 0.2

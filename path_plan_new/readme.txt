@@ -4,7 +4,17 @@ or
 
 
 ./genmatrix.py -i outputfromtake.csv -o outputfromtake.json
+or
+./genmatrix.py -i outputfromnatnet.csv -o outputfromnatnet.json
 
 
 ./display.py -i outputfromtake.json
+or
+./display.py -i outputfromnatnet.json
+
+
+./run.py -i outputfromtake.json
+or
+./run.py -i outputfromnatnet.json
+
 
