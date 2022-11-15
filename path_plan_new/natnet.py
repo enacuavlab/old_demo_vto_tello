@@ -27,6 +27,9 @@ class Thread_natnet(threading.Thread):
       print("ERROR: data socket error occurred:\n%s" %msg)
       print("  Check Motive/Server mode requested mode agreement.  You requested Multicast ")
 
+  def stop(self):
+    self.running = False
+
 
   def run(self):
     data=bytearray(0)
