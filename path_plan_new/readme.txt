@@ -1,18 +1,37 @@
-./exec_getbuildings.py -i 'Take 2022-11-08 08.26.58 AM.csv' -o outputfromtake.csv
+# OPTITRACK MOTIVE STREAM CONFIGURATION
+#   Asset Markers : ON 
+#   Rigid Bodies : ON of OFF
+#
+# Select only BUILDINGS_xxx
+#
+
+./exec_getbuildings.py -i material/'Take 2022-11-15 03.10.48 PM.csv' -o material/outputfromtake.csv
 or
-./exec_getbuildings.py -o outputfromnatnet.csv
+./exec_getbuildings.py -o material/outputfromnatnet.csv
 
 
-./exec_genmatrix.py -i outputfromtake.csv -o outputfromtake.json
+
+./exec_genmatrix.py -i material/outputfromtake.csv -o material/outputfromtake.json
 or
-./exec_genmatrix.py -i outputfromnatnet.csv -o outputfromnatnet.json
+./exec_genmatrix.py -i material/outputfromnatnet.csv -o material/outputfromnatnet.json
 
 
-./exec_display.py -i outputfromtake.json
+
+
+./exec_display.py -i material/outputfromtake.json
 or
-./exec_display.py -i outputfromnatnet.json
+./exec_display.py -i material/outputfromnatnet.json
 
 
-./exec_run.py -i outputfromtake.json
+
+
+# OPTITRACK MOTIVE STREAM CONFIGURATION
+#   Asset Markers : ON or OFF
+#   Rigid Bodies : ON
+#
+# Select rigibodies : HELMET_888 and TELLO_xxx
+#
+
+./exec_run.py -i material/outputfromtake.json
 or
-./exec_run.py -i outputfromnatnet.json
+./exec_run.py -i material/outputfromnatnet.json

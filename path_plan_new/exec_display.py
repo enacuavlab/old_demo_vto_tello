@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 
 #--------------------------------------------------------------------------------
 #
-# ./exec_display.py -i outputfromtake.json
+# ./exec_display.py -i material/outputfromtake.json
 # or 
-# ./exec_display.py -i outputfromnatnet.json
+# ./exec_display.py -i material/outputfromnatnet.json
 #
 #--------------------------------------------------------------------------------
 

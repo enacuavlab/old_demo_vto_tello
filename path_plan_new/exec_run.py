@@ -12,9 +12,9 @@ import numpy as np
 
 #--------------------------------------------------------------------------------
 #
-# ./exec_run.py -i outputfromtake.json
+# ./exec_run.py -i material/outputfromtake.json
 # or 
-# ./exec_run.py -i outputfromnatnet.json
+# ./exec_run.py -i material/outputfromnatnet.json
 #
 #--------------------------------------------------------------------------------
 
@@ -28,11 +28,17 @@ import numpy as np
 #   This program gets data from Motive Server v3, with following settings:
 #   Local Interface : 192.168.1.231
 #   Transmission Type : Multicast
-#   Labeled Markers : On
-#   Unlabeled Markers : On
-#   Asset Markers : On
-#   Rigid Bodies : On
-#   ...
+#   Labeled Markers : OFF
+#   Unlabeled Markers : OFF
+#
+#   Asset Markers : ON or OFF
+#   Rigid Bodies : ON
+#
+#   Skeletons : OFF
+#   Devices : OFF
+#
+#   Up Axis : Z-Axis
+#
 #   Command Port : 1510
 #   Data Port : 1511
 #   Multicast Interface : 239.255.42.99
@@ -61,8 +67,9 @@ import numpy as np
 #--------------------------------------------------------------------------------
 Vector3 = struct.Struct( '<fff' )
 Quaternion = struct.Struct( '<ffff' )
+FloatValue = struct.Struct( '<f' )
 
-def natnet_parse(in_socket,buildings):
+def natnet_parse(in_socket,rigidbodydic):
   data=bytearray(0)
   # 64k buffer size
   recv_buffer_size=64*1024
@@ -72,46 +79,42 @@ def natnet_parse(in_socket,buildings):
     packet_size = int.from_bytes( data[2:4], byteorder='little' )
     if message_id == 7 : # NAT_FRAMEOFDATA :
       offset = 4
-      frame_number = int.from_bytes( data[offset:offset+4], byteorder='little' )
       offset += 4
       marker_set_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
       offset += 4
-      for i in range( 0, marker_set_count ):
+
+      for i in range( 0, marker_set_count ): #  if Asset Markers : ON
         model_name, separator, remainder = bytes(data[offset:]).partition( b'\0' )
         offset += len( model_name ) + 1
-        buildingName = model_name.decode( 'utf-8' )
-        print("Model name: ",buildingName)
         marker_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
         offset += 4
-        #print( "Marker Count    : ", marker_count )
         for j in range( 0, marker_count ):
           floatLst = Vector3.unpack( data[offset:offset+12] )
           offset += 12
 
-      unlabeled_markers_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
       offset += 4
-      for i in range( 0, unlabeled_markers_count ):
-        pos = Vector3.unpack( data[offset:offset+12] )
-        offset += 12
-
       rigid_body_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
       offset += 4
-
-      for i in range( 0, rigid_body_count ):
-        # ID (4 bytes)
+      for i in range( 0, rigid_body_count ): # if Rigid Bodies : ON
         new_id = int.from_bytes( data[offset:offset+4], byteorder='little' )
         offset += 4
         pos = Vector3.unpack( data[offset:offset+12] )
         offset += 12
-        print( "\tPosition    : [%3.2f, %3.2f, %3.2f]"% (pos[0], pos[1], pos[2] ))
         rot = Quaternion.unpack( data[offset:offset+16] )
         offset += 16
-        print( "\tOrientation : [%3.2f, %3.2f, %3.2f, %3.2f]"% (rot[0], rot[1], rot[2], rot[3] ))
+        marker_error, = FloatValue.unpack( data[offset:offset+4] )
+        offset += 4
+        param, = struct.unpack( 'h', data[offset:offset+2] )
+        tracking_valid = ( param & 0x01 ) != 0
+        offset += 2
+        if tracking_valid:
+          idName = str(new_id)
+          if idName in rigidbodydic: 
+            print(idName)
+            rigidbodydic.update({idName:(pos,rot)})
 
 
-
-
-def natnet_get(buildingList):
+def natnet_get(rigidbodydic):
   data_sock = socket.socket( socket.AF_INET,socket.SOCK_DGRAM,0)
   data_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
   data_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton("239.255.42.99") + socket.inet_aton("0.0.0.0"))
@@ -122,7 +125,7 @@ def natnet_get(buildingList):
     print("  Check Motive/Server mode requested mode agreement.  You requested Multicast ")
   stop_threads = False
   buildings = {}
-  data_thread = Thread( target = natnet_parse, args = (data_sock,buildings ))
+  data_thread = Thread( target = natnet_parse, args = (data_sock,rigidbodydic ))
   data_thread.start()
 
 #--------------------------------------------------------------------------------
@@ -136,7 +139,8 @@ if __name__ == '__main__':
     with open(args.input_jsonmatrix, "r") as infile: retmat = json.load(infile)
     infile.close()
 
-    buildingList = []
+    rigidbodydic = {'888':None,'65':None,'60':None}
+
 #    for val0, val1, val2, val3, val4, val5 in retmat.values():
 #      b = Building(val0,np.array(val1))
 #      pts = b.vertices
@@ -147,4 +151,4 @@ if __name__ == '__main__':
 #      b.K_inv = np.array(val5)
 #      buildingList.append(b)
 
-    natnet_get(buildingList)
+    natnet_get(rigidbodydic)

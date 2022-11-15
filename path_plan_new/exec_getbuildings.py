@@ -14,9 +14,9 @@ import numpy as np
 
 #--------------------------------------------------------------------------------
 #
-# ./exec_getbuildings.py -i 'Take 2022-11-08 08.26.58 AM.csv' -o outputfromtake.csv
+# ./exec_getbuildings.py -i material/'Take 2022-11-08 08.26.58 AM.csv' -o material/outputfromtake.csv
 # or
-# ./exec_getbuildings.py -o outputfromnatnet.csv
+# ./exec_getbuildings.py -o material/outputfromnatnet.csv
 #
 #--------------------------------------------------------------------------------
 
@@ -34,11 +34,14 @@ import numpy as np
 #   This program gets data from Motive Server v3, with following settings:
 #   Local Interface : 192.168.1.231
 #   Transmission Type : Multicast
-#   Labeled Markers : On
-#   Unlabeled Markers : On
-#   Asset Markers : On
-#   Rigid Bodies : On
-#   ...
+#   Labeled Markers : OFF
+#   Unlabeled Markers : OFF
+#
+#   Asset Markers : ON
+#   Rigid Bodies : ON or OFF
+#
+#   Up Axis : Z-Axis
+#
 #   Command Port : 1510
 #   Data Port : 1511
 #   Multicast Interface : 239.255.42.99

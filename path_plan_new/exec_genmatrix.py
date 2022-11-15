@@ -3,14 +3,14 @@
 import json
 import argparse
 import numpy as np
-import Building
+from building import Building
 
 
 #--------------------------------------------------------------------------------
 #
-# ./exec_genmatrix.py -i outputfromtake.csv -o outputfromtake.json
+# ./exec_genmatrix.py -i material/outputfromtake.csv -o material/outputfromtake.json
 # or
-# ./exec_genmatrix.py -i outputfromnatnet.csv -o outputfromnatnet.json
+# ./exec_genmatrix.py -i material/outputfromnatnet.csv -o material/outputfromnatnet.json
 #
 #--------------------------------------------------------------------------------
 
