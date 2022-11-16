@@ -12,9 +12,12 @@ import time
 tellos_routeur = {61:'TELLO-ED433E',62:'TELLO-ED4317',63:'TELLO-ED42A3',64:'TELLO-ED4381'}
 tellos_docker = {60:'TELLO-ED4310',65:'TELLO-F0B594',66:'TELLO-99CE21'}
 
+
 #------------------------------------------------------------------------------
 #tellos_selected = (64,65)
 tellos_selected = (64,)
+
+acTarg = [888,'Helmet']
 
 telloFreq = 10
 
@@ -66,8 +69,8 @@ class Thread_mission(threading.Thread):
 #------------------------------------------------------------------------------
 def main():
 
-#  ret,telloDic = initNet()
-#  if ret == False: sys.exit(-1)
+  ret,telloDic = initNet()
+  if ret == False: sys.exit(-1)
 
   rgbDict = {'888':None,'65':None,'60':None}
 
@@ -75,14 +78,14 @@ def main():
   threadMotion.start()
 
   commands = queue.Queue()
-#  commands.put(('command',))
-#  commands.put(('streamon',))
-#  commands.put(('downvision 0',))
-#
-#  threadMission = Thread_mission(commands)
-#  threadMission.start()
-#
-#  sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  commands.put(('command',))
+  commands.put(('streamon',))
+  commands.put(('downvision 0',))
+
+  threadMission = Thread_mission(commands)
+  threadMission.start()
+
+  sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
   try:
     while True:
@@ -104,4 +107,3 @@ def main():
 #------------------------------------------------------------------------------
 if __name__=="__main__":
   main()
-

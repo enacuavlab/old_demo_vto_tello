@@ -35,3 +35,12 @@ or
 ./exec_run.py -i material/outputfromtake.json
 or
 ./exec_run.py -i material/outputfromnatnet.json
+
+
+
+gst-launch-1.0 -v udpsrc port=11111 caps="video/x-h264, stream-format=(string)byte-stream" ! decodebin ! videoconvert ! autovideosink sync=false
+
+
+gst-launch-1.0 -v udpsrc port=11115 caps="video/x-h264, stream-format=(string)byte-stream" ! decodebin ! videoconvert ! autovideosink sync=false
+gst-launch-1.0 -v udpsrc port=11116 caps="video/x-h264, stream-format=(string)byte-stream" ! decodebin ! videoconvert ! autovideosink sync=false
+...
