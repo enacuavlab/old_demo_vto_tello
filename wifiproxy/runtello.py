@@ -133,4 +133,6 @@ if __name__ == '__main__':
           if (left in tmp):
             cmd_port=int((tmp[tmp.index(left)+len(left):]).split()[0])
             docker_ip=(docker.DockerClient().containers.get(i.name).attrs['NetworkSettings']['IPAddress'])
+            print(docker_ip)
+            print(cmd_port)
             main(docker_ip,cmd_port)
