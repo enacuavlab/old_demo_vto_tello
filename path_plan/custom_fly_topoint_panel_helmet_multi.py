@@ -23,8 +23,8 @@ import docker
 
 #acDict = {60:[('TELLO-ED4310')],65:[('TELLO-F0B594')]}
 #acDict = {60:[('TELLO-ED4310')]}
-#acDict = {65:[('TELLO-F0B594')]}
-acDict = {66:[('TELLO-99CE21')]}
+acDict = {65:[('TELLO-F0B594')]}
+#acDict = {66:[('TELLO-99CE21')]}
 acTarg = [888,'Helmet']
 
 optiFreq = 20

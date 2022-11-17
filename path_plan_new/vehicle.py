@@ -5,6 +5,10 @@ import numpy as np
 #--------------------------------------------------------------------------------
 class Vehicle():
   def __init__(self,ID,source_strength = 0, imag_source_strength = 0.4):
+    self.position_enu = np.zeros(3)
+    self.velocity_enu = np.zeros(3)
+    self.heading = 0.
+
     self.ID              = ID
     self.source_strength = source_strength
     self.imag_source_strength = imag_source_strength
@@ -34,4 +38,12 @@ class Vehicle():
     self.altitude = altitude                                       # Cruise altitude
     self.V_inf    = np.array([Vinf*np.cos(AoA), Vinf*np.sin(AoA)]) # Freestream velocity. AoA is measured from horizontal axis, cw (+)tive
 
+  def update(self,position,velocity,heading):
+    self.position_enu = position
+    self.velocity_enu = velocity
+    angle = heading - np.pi / 2
+    self.heading = -np.arctan2(np.sin(angle), np.cos(angle))
+
+    self.Set_Position(position)
+    self.Set_Velocity(velocity)
 

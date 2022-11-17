@@ -1,154 +1,166 @@
 #!/usr/bin/python3
 
-import struct
-import time
-import socket
-from threading import Thread
+from natnet import Thread_natnet
+from mission import Thread_mission
+from vehicle import Vehicle
 
-import json
-import argparse
 import numpy as np
+import json
+import sys
+import argparse
+import subprocess
+import queue
+import socket
+import time
 
+tellos_routeur = {61:'TELLO-ED433E',62:'TELLO-ED4317',63:'TELLO-ED42A3',64:'TELLO-ED4381'}
+tellos_docker = {60:'TELLO-ED4310',65:'TELLO-F0B594',66:'TELLO-99CE21'}
+
+
+#------------------------------------------------------------------------------
+#tellos_selected = (64,65)
+tellos_selected = (65,)
+
+acTarg = [888,'Helmet']
+
+sourceStrength = 0.95 # Tello repelance
+
+optiFreq = 20 # Check that optitrack stream at least with this value 
 
 #--------------------------------------------------------------------------------
 #
 # ./exec_run.py -i material/outputfromtake.json
-# or 
+# or
 # ./exec_run.py -i material/outputfromnatnet.json
 #
 #--------------------------------------------------------------------------------
 
-# This program compute and send in realtime flight guidance to vehicles 
+# This program compute and send in realtime flight guidance to vehicles
 # - to track a goal
 # - to avoid buildings
 # - to avoid vehicles
 
-# From Optitrack Natnet rigidbodies live positions
-#   This programs inspired  from MoCapData.py natnet SDK 4.0 (windows package)
-#   This program gets data from Motive Server v3, with following settings:
-#   Local Interface : 192.168.1.231
-#   Transmission Type : Multicast
-#   Labeled Markers : OFF
-#   Unlabeled Markers : OFF
-#
-#   Asset Markers : ON or OFF
-#   Rigid Bodies : ON
-#
-#   Skeletons : OFF
-#   Devices : OFF
-#
-#   Up Axis : Z-Axis
-#
-#   Command Port : 1510
-#   Data Port : 1511
-#   Multicast Interface : 239.255.42.99
-
-#--------------------------------------------------------------------------------
-#  tello_address = ('192.168.10.61', 8889)
-#  sock.sendto('command'.encode(encoding="utf-8"),tello_address)
-#  sock.sendto('takeoff'.encode(encoding="utf-8"),tello_address)
-#  sock.sendto('land'.encode(encoding="utf-8"),tello_address)
-#  cmd=("rc %d %d %d %d"%(roll,pitch,throttle,yaw))
-#  sock.sendto(''.encode(encoding="utf-8"),tello_address)
-
-#--------------------------------------------------------------------------------
-#acDict = {60:[('TELLO-ED4310')],65:[('TELLO-F0B594')]}
-#acDict = {60:[('TELLO-ED4310')]}
-#acDict = {65:[('TELLO-F0B594')]}
-#acDict = {66:[('TELLO-99CE21')]}
-#acTarg = [888,'Helmet']
-
-#optiFreq = 20
-#telloFreq = 10
-#telloSpeed = 0.3
-
-#sourceStrength = 0.95 # Tello repelance
-
-#--------------------------------------------------------------------------------
-Vector3 = struct.Struct( '<fff' )
-Quaternion = struct.Struct( '<ffff' )
-FloatValue = struct.Struct( '<f' )
-
-def natnet_parse(in_socket,rigidbodydic):
-  data=bytearray(0)
-  # 64k buffer size
-  recv_buffer_size=64*1024
-  data, addr = in_socket.recvfrom( recv_buffer_size )
-  if len( data ) > 0 :
-    message_id = int.from_bytes( data[0:2], byteorder='little' )
-    packet_size = int.from_bytes( data[2:4], byteorder='little' )
-    if message_id == 7 : # NAT_FRAMEOFDATA :
-      offset = 4
-      offset += 4
-      marker_set_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
-      offset += 4
-
-      for i in range( 0, marker_set_count ): #  if Asset Markers : ON
-        model_name, separator, remainder = bytes(data[offset:]).partition( b'\0' )
-        offset += len( model_name ) + 1
-        marker_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
-        offset += 4
-        for j in range( 0, marker_count ):
-          floatLst = Vector3.unpack( data[offset:offset+12] )
-          offset += 12
-
-      offset += 4
-      rigid_body_count = int.from_bytes( data[offset:offset+4], byteorder='little' )
-      offset += 4
-      for i in range( 0, rigid_body_count ): # if Rigid Bodies : ON
-        new_id = int.from_bytes( data[offset:offset+4], byteorder='little' )
-        offset += 4
-        pos = Vector3.unpack( data[offset:offset+12] )
-        offset += 12
-        rot = Quaternion.unpack( data[offset:offset+16] )
-        offset += 16
-        marker_error, = FloatValue.unpack( data[offset:offset+4] )
-        offset += 4
-        param, = struct.unpack( 'h', data[offset:offset+2] )
-        tracking_valid = ( param & 0x01 ) != 0
-        offset += 2
-        if tracking_valid:
-          idName = str(new_id)
-          if idName in rigidbodydic: 
-            print(idName)
-            rigidbodydic.update({idName:(pos,rot)})
+#------------------------------------------------------------------------------
+class ArenaMap():
+  def __init__(self):
+    self.panels = None
+    self.wind = [0,0]
+    self.windT = 0
+    self.buildings = []
 
 
-def natnet_get(rigidbodydic):
-  data_sock = socket.socket( socket.AF_INET,socket.SOCK_DGRAM,0)
-  data_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-  data_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton("239.255.42.99") + socket.inet_aton("0.0.0.0"))
+#------------------------------------------------------------------------------
+class Building():
+  def __init__(self,name,vertices): # Buildings(obstacles) are defined by coordinates of their vertices.
+    self.name = name
+    self.vertices = np.array(vertices)
+    self.pcp = None
+    self.pb = None
+    self.nop  = None           # Number of Panels
+    self.K_inv = None
+
+#------------------------------------------------------------------------------
+class Rigidbody():
+  def __init__(self,ac_id):
+    self.ac_id = ac_id
+    self.valid = False
+    self.position = np.zeros(3)
+    self.velocity = np.zeros(3)
+    self.heading = 0.
+    self.quat = np.zeros(4)
+
+
+#------------------------------------------------------------------------------
+def initNetDrone():
+  telloDic = {}
+  cpt=0
+  for i in tellos_selected:
+    if i in tellos_routeur:
+      addr = ('192.168.1.'+str(i),8889)
+      p = subprocess.Popen(["ping", "-q", "-c", "1", addr[0]], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      if p.wait() == 0:
+        telloDic[i] = (tellos_routeur[i],addr)
+        cpt = cpt + 1
+  
+    elif i in tellos_docker:
+      telloDic[i] = tellos_docker[i]
+      from dockernet import getdockeraddr   # Should run even without docker installed,
+      ret,addr = getdockeraddr(telloDic[i]) # for non docker tellos
+      if ret:
+        telloDic[i] = (tellos_docker[i],addr)
+        cpt = cpt + 1
+
+  ret = True if cpt == len(tellos_selected) else False
+  return(ret,telloDic)
+
+
+
+def initArena(jsonfile):
+  retmat = {}
+  with open(jsonfile, "r") as infile: retmat = json.load(infile)
+  infile.close()
+  arena = ArenaMap()
+  for val0, val1, val2, val3, val4, val5 in retmat.values():
+    b = Building(val0,np.array(val1))
+    b.vertices = np.array(val1) # udpate vertices
+    b.pcp = np.array(val2)
+    b.pb = np.array(val3)
+    b.nop = val4
+    b.K_inv = np.array(val5)
+    arena.buildings.append(b)
+  return arena
+
+
+#------------------------------------------------------------------------------
+def main(arena,telloDic):
+
+  vehicleList = [];
+  rigidBodyDict = {};
+  rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
+  for ac in tellos_selected:
+    vehicleList.append(Vehicle(ac,sourceStrength))
+    rigidBodyDict[ac]=Rigidbody(ac)
+
+  threadMotion = Thread_natnet(rigidBodyDict,optiFreq)
+  threadMotion.start()
+
+  commands = queue.Queue()
+  commands.put(('command',))
+  commands.put(('streamon',))
+  commands.put(('downvision 0',))
+
+  threadMission = Thread_mission(commands,acTarg[0],rigidBodyDict,vehicleList,arena)
+  threadMission.start()
+
+  sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+  print("READY")
+
   try:
-    data_sock.bind( ("0.0.0.0", 1511) )
-  except socket.error as msg:
-    print("ERROR: data socket error occurred:\n%s" %msg)
-    print("  Check Motive/Server mode requested mode agreement.  You requested Multicast ")
-  stop_threads = False
-  buildings = {}
-  data_thread = Thread( target = natnet_parse, args = (data_sock,rigidbodydic ))
-  data_thread.start()
+    while True:
+      vtupple=commands.get()
+      print(vtupple)
+#      if (len(vtupple)==2):
+#        sock.sendto(vtupple[0].encode(encoding="utf-8"),vtupple[1])
+#      else:
+#        for ac in telloDic:
+#          sock.sendto(vtupple[0].encode(encoding="utf-8"),telloDic[ac][1])
 
-#--------------------------------------------------------------------------------
-if __name__ == '__main__':
+  except KeyboardInterrupt:
+    print("\nWe are interrupting the program\n")
+    time.sleep(1)
+    threadMission.stop()
+    threadMotion.stop()
+    sock.close()
+    print("mainloop stopped")
+
+#------------------------------------------------------------------------------
+if __name__=="__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument( '-i', '--input_jsonmatrix')
   args = parser.parse_args()
 
   if (args.input_jsonmatrix):
-    retmat = {}
-    with open(args.input_jsonmatrix, "r") as infile: retmat = json.load(infile)
-    infile.close()
-
-    rigidbodydic = {'888':None,'65':None,'60':None}
-
-#    for val0, val1, val2, val3, val4, val5 in retmat.values():
-#      b = Building(val0,np.array(val1))
-#      pts = b.vertices
-#      b.vertices = np.array(val1) # udpate vertices
-#      b.pcp = np.array(val2)
-#      b.pb = np.array(val3)
-#      b.nop = val4
-#      b.K_inv = np.array(val5)
-#      buildingList.append(b)
-
-    natnet_get(rigidbodydic)
+    arena = initArena(args.input_jsonmatrix)
+    ret,telloDic = initNetDrone()
+    if ret: main(arena,telloDic)
