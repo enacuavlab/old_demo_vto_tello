@@ -4,6 +4,11 @@ import numpy as np
 
 
 #--------------------------------------------------------------------------------
+#
+# This class represent a building from it's coefficient matrix (panel method)
+# Vortex strength is produced from this matrix
+#
+#--------------------------------------------------------------------------------
 class BuildingOut():
   def __init__(self,name,vertices): # Buildings(obstacles) are defined by coordinates of their vertices.
     self.name = name

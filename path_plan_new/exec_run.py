@@ -20,7 +20,8 @@ tellos_docker = {60:'TELLO-ED4310',65:'TELLO-F0B594',66:'TELLO-99CE21'}
 
 #------------------------------------------------------------------------------
 #tellos_selected = (64,65)
-tellos_selected = (65,)
+#tellos_selected = (65,)
+tellos_selected = (66,)
 
 acTarg = [888,'Helmet']
 

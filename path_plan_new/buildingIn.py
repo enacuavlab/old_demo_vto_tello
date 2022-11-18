@@ -5,6 +5,11 @@ import pyclipper
 import math
 
 #--------------------------------------------------------------------------------
+# 
+# This class represent a building from it's clockwize non aligned vertices
+# A coefficient matrix (panel method) is produced from the shape of this building
+#
+#--------------------------------------------------------------------------------
 class BuildingIn():
   def __init__(self,name,vertices): # Buildings(obstacles) are defined by coordinates of their vertices.
     self.name = name

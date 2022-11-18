@@ -6,6 +6,11 @@ import subprocess
 
 
 #------------------------------------------------------------------------------
+#
+# This function is used to get IP and PORT from drone configured as hotspot, and connected through docker
+# These drones provide different IP and PORT to be guided and delivering video
+#
+#------------------------------------------------------------------------------
 def getdockeraddr(name):
   ret = False
   docker_ip = None
