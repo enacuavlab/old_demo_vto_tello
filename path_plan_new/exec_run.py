@@ -3,6 +3,7 @@
 from natnet import Thread_natnet
 from mission import Thread_mission
 from vehicle import Vehicle
+from buildingOut import BuildingOut
 
 import numpy as np
 import json
@@ -50,16 +51,6 @@ class ArenaMap():
 
 
 #------------------------------------------------------------------------------
-class Building():
-  def __init__(self,name,vertices): # Buildings(obstacles) are defined by coordinates of their vertices.
-    self.name = name
-    self.vertices = np.array(vertices)
-    self.pcp = None
-    self.pb = None
-    self.nop  = None           # Number of Panels
-    self.K_inv = None
-
-#------------------------------------------------------------------------------
 class Rigidbody():
   def __init__(self,ac_id):
     self.ac_id = ac_id
@@ -101,7 +92,7 @@ def initArena(jsonfile):
   infile.close()
   arena = ArenaMap()
   for val0, val1, val2, val3, val4, val5 in retmat.values():
-    b = Building(val0,np.array(val1))
+    b = BuildingOut(val0,np.array(val1))
     b.vertices = np.array(val1) # udpate vertices
     b.pcp = np.array(val2)
     b.pb = np.array(val3)
@@ -112,7 +103,7 @@ def initArena(jsonfile):
 
 
 #------------------------------------------------------------------------------
-def main(arena,telloDic):
+def main(arena,telloNet):
 
   vehicleList = [];
   rigidBodyDict = {};
@@ -140,11 +131,11 @@ def main(arena,telloDic):
     while True:
       vtupple=commands.get()
       print(vtupple)
-#      if (len(vtupple)==2):
-#        sock.sendto(vtupple[0].encode(encoding="utf-8"),vtupple[1])
-#      else:
-#        for ac in telloDic:
-#          sock.sendto(vtupple[0].encode(encoding="utf-8"),telloDic[ac][1])
+      if (len(vtupple)==2):
+        sock.sendto(vtupple[0].encode(encoding="utf-8"),telloNet[vtupple[1]][1])
+      else:
+        for ac in telloNet:
+          sock.sendto(vtupple[0].encode(encoding="utf-8"),telloNet[ac][1])
 
   except KeyboardInterrupt:
     print("\nWe are interrupting the program\n")
@@ -162,5 +153,5 @@ if __name__=="__main__":
 
   if (args.input_jsonmatrix):
     arena = initArena(args.input_jsonmatrix)
-    ret,telloDic = initNetDrone()
-    if ret: main(arena,telloDic)
+    ret,telloNet = initNetDrone()
+    if ret: main(arena,telloNet)

@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 
 from common import Flow_Velocity_Calculation
-from building import Building
+from buildingOut import BuildingOut
 from vehicle import Vehicle
+
+import numpy as np
 
 import json
 import argparse
-import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -23,8 +24,7 @@ import matplotlib.pyplot as plt
 # - to avoid buildings
 # - to avoid vehicles
 
-#--------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 def run(buildingList):
   acDict = {60:[('TELLO-ED4310')],65:[('TELLO-F0B594')]}
   sourceStrength = 0.95 # Tello repelance
@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     buildingList = []
     for val0, val1, val2, val3, val4, val5 in retmat.values():
-      b = Building(val0,np.array(val1))
+      b = BuildingOut(val0,np.array(val1))
       pts = b.vertices
       b.vertices = np.array(val1) # udpate vertices
       display(val0,b.vertices,pts)

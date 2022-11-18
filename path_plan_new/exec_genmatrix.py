@@ -3,7 +3,7 @@
 import json
 import argparse
 import numpy as np
-from building import Building
+from buildingIn import BuildingIn
 
 
 #--------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     verts = np.empty((len(itemA[1]),3),dtype=float)
     for i,itemB in enumerate(itemA[1].items()): 
       for j in range(3):verts[i][j] = itemB[1][j]*1000.0
-    buildingList.append(Building(itemA[0],verts))
+    buildingList.append(BuildingIn(itemA[0],verts))
 
   data = {}
   for index,building in enumerate(buildingList):
