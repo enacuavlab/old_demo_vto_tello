@@ -6,7 +6,6 @@ from itertools import compress
 
 #--------------------------------------------------------------------------------
 def Flow_Velocity_Calculation(vehicles,buildings):
-  print("Flow_Velocity_Calculation")
   for f,vehicle in enumerate(vehicles):
     othervehicleslist = vehicles[:f] + vehicles[f+1:]
     vehicle.altitude_mask = np.zeros(( len(buildings) )) #, dtype=int) 
