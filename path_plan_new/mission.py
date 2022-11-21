@@ -38,6 +38,7 @@ class Thread_mission(threading.Thread):
   
     telloPeriod = 1/telloFreq
     for i in range(1000):
+      if not self.rigidBodyDict[self.targetId].valid: continue
       time.sleep(telloPeriod)
       targetPos = self.rigidBodyDict[self.targetId].position
       for v in self.vehicles:
