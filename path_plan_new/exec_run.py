@@ -21,10 +21,10 @@ tellos_routeur = {61:'TELLO-ED433E',62:'TELLO-ED4317',63:'TELLO-ED42A3',64:'TELL
 tellos_docker = {66:'TELLO-99CE21',67:'TELLO-99CE5A'}
 
 #------------------------------------------------------------------------------
-#tellos_selected = (65,)
+tellos_selected = (65,)
 #tellos_selected = (66,)
 #tellos_selected = (67,)
-tellos_selected = (65,66,67,)
+#tellos_selected = (65,66,67,)
 #tellos_selected = (67,65,)
 
 acTarg = [888,'Helmet']
@@ -124,7 +124,6 @@ def main(arena,telloNet):
   commands.put(('command',))
   commands.put(('streamon',))
   commands.put(('downvision 0',))
-  commands.put(('streamoff',))
 
   threadMission = Thread_mission(commands,acTarg[0],rigidBodyDict,vehicleList,arena)
   threadMission.start()
@@ -158,6 +157,7 @@ if __name__=="__main__":
   args = parser.parse_args()
 
   if (args.input_jsonmatrix):
-    arena = initArena(args.input_jsonmatrix)
     ret,telloNet = initNetDrone()
-    if ret: main(arena,telloNet)
+    if ret:
+      arena = initArena(args.input_jsonmatrix)
+      main(arena,telloNet)

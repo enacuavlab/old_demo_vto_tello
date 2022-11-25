@@ -2,6 +2,8 @@
 
 from common import Flow_Velocity_Calculation
 
+from shapely.geometry import Point, Polygon
+
 import threading
 
 import numpy as np
@@ -35,12 +37,24 @@ class Thread_mission(threading.Thread):
     self.running = False
 
   def guidanceLoop(self,commands):
-  
+    unvalidcpt = 0
+
     telloPeriod = 1/telloFreq
     for i in range(1000):
-      if not self.rigidBodyDict[self.targetId].valid: continue
+
       time.sleep(telloPeriod)
-      targetPos = self.rigidBodyDict[self.targetId].position
+
+      if not self.rigidBodyDict[self.targetId].valid: 
+        unvalidcpt = unvalidcpt+1
+        if unvalidcpt == 10: break
+        else: continue
+      else: unvalidcpt= 0
+
+      if all(not Point(self.rigidBodyDict[self.targetId].position[0],
+                       self.rigidBodyDict[self.targetId].position[1]).within(Polygon(building.vertices)) 
+             for building in self.arena.buildings):
+        targetPos = self.rigidBodyDict[self.targetId].position
+
       for v in self.vehicles:
         v.Set_Goal(targetPos,5,0.0)
         v.update(self.rigidBodyDict[v.ID].position,self.rigidBodyDict[v.ID].velocity,self.rigidBodyDict[v.ID].heading)

@@ -44,3 +44,12 @@ gst-launch-1.0 -v udpsrc port=11111 caps="video/x-h264, stream-format=(string)by
 gst-launch-1.0 -v udpsrc port=11115 caps="video/x-h264, stream-format=(string)byte-stream" ! decodebin ! videoconvert ! autovideosink sync=false
 gst-launch-1.0 -v udpsrc port=11116 caps="video/x-h264, stream-format=(string)byte-stream" ! decodebin ! videoconvert ! autovideosink sync=false
 ...
+
+######################################################################################
+# USAGE !!
+
+- Target should move outside buildings perimeter
+- Building shoud be at least at 1 m from others
+- If helmet is upside down for at least 1 sec. drones are landed
+
+######################################################################################
