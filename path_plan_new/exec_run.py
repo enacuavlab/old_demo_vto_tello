@@ -17,15 +17,17 @@ import time
 #tellos_routeur = {61:'TELLO-ED433E',62:'TELLO-ED4317',63:'TELLO-ED42A3',64:'TELLO-ED4381'}
 #tellos_docker = {60:'TELLO-ED4310',65:'TELLO-F0B594',66:'TELLO-99CE21'}
 
-tellos_routeur = {61:'TELLO-ED433E',62:'TELLO-ED4317',63:'TELLO-ED42A3',64:'TELLO-ED4381',65:'TELLO-F0B594'}
-tellos_docker = {66:'TELLO-99CE21',67:'TELLO-99CE5A'}
+tellos_routeur = {61:'TELLO-ED433E',62:'TELLO-ED4317',63:'TELLO-ED42A3',64:'TELLO-ED4381',65:'TELLO-F0B594',66:'TELLO-99CE21'}
+tellos_docker = {67:'TELLO-99CE5A',68:'TELLO-99CE4E'}
 
 #------------------------------------------------------------------------------
-tellos_selected = (65,)
+#tellos_selected = (65,)
 #tellos_selected = (66,)
 #tellos_selected = (67,)
+tellos_selected = (68,)
 #tellos_selected = (65,66,67,)
 #tellos_selected = (67,65,)
+#tellos_selected = (66,65,)
 
 acTarg = [888,'Helmet']
 
