@@ -40,7 +40,7 @@ class Thread_mission(threading.Thread):
     unvalidcpt = 0
 
     telloPeriod = 1/telloFreq
-    for i in range(1000):
+    for i in range(1500):
 
       time.sleep(telloPeriod)
 
