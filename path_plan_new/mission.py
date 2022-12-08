@@ -3,6 +3,7 @@
 from common import Flow_Velocity_Calculation
 
 from shapely.geometry import Point, Polygon
+from shapely import affinity
 
 import threading
 
@@ -12,6 +13,12 @@ import time
 
 telloSpeed = 0.3
 telloFreq = 10
+
+#------------------------------------------------------------------------------
+protectScale = 0.9 # 0.9, 0.95, 1.0
+class ShrinkBuilding():
+  def __init__(self,vertices):
+    self.polygon = affinity.scale(Polygon(vertices),xfact=protectScale, yfact=protectScale)
 
 #------------------------------------------------------------------------------
 class Thread_mission(threading.Thread):
@@ -25,6 +32,9 @@ class Thread_mission(threading.Thread):
     self.arena = arena
     self.running = True
     for v in self.vehicles: v.Go_to_Goal(1.4,0,0,0) # altitude,AoA,t_start,Vinf=0.5,0.5,1.5
+
+    self.shrinkBuildings = [ShrinkBuilding(b.vertices) for b in arena.buildings]
+
 
   def run(self):
     time.sleep(1)
@@ -53,9 +63,9 @@ class Thread_mission(threading.Thread):
       targetPosUpdate = True
 
       # This should not happened, if repealance is well tuned
-      for building in self.arena.buildings:
+      for building in self.shrinkBuildings:
         for key,rb in self.rigidBodyDict.items():
-          if Point(rb.position[0],rb.position[1]).within(Polygon(building.vertices)):
+          if Point(rb.position[0],rb.position[1]).within(building.polygon):
             if key == self.targetId: 
               targetPosUpdate = False
             else:
@@ -82,3 +92,4 @@ class Thread_mission(threading.Thread):
         heading = np.arctan2(targetPos[1]-v.position[1],targetPos[0]-v.position[0])
         v.Set_Desired_Velocity(vel_enu, method='None')
         commands.put((v.send_velocity_enu(v.velocity_desired, heading),v.ID))
+#        print(vel_enu)
