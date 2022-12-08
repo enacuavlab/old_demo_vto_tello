@@ -15,7 +15,8 @@ class BuildingIn():
     self.name = name
     self.vertices = vertices
     panels = np.array([])
-    rad = 0.2
+#    rad = 0.2
+    rad = 0.15
     safetyfac = 1.1
     rad = rad * safetyfac
     scale = 1e6  # Inflate

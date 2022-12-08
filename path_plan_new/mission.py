@@ -28,9 +28,9 @@ class Thread_mission(threading.Thread):
 
   def run(self):
     time.sleep(1)
-    self.commands.put(('takeoff',))
+    self.commands.put(('takeoff',)) 
     time.sleep(7)
-    self.guidanceLoop(self.commands)
+    self.guidanceLoop(self.commands) # all positions should no be capture, unless takeoff is done
     self.commands.put(('land',))
 
   def stop(self):
@@ -50,10 +50,23 @@ class Thread_mission(threading.Thread):
         else: continue
       else: unvalidcpt= 0
 
-      if all(not Point(self.rigidBodyDict[self.targetId].position[0],
-                       self.rigidBodyDict[self.targetId].position[1]).within(Polygon(building.vertices)) 
-             for building in self.arena.buildings):
-        targetPos = self.rigidBodyDict[self.targetId].position
+      targetPosUpdate = True
+
+      # This should not happened, if repealance is well tuned
+      for building in self.arena.buildings:
+        for key,rb in self.rigidBodyDict.items():
+          if Point(rb.position[0],rb.position[1]).within(Polygon(building.vertices)):
+            if key == self.targetId: 
+              targetPosUpdate = False
+            else:
+              print((key,rb.position))
+              commands.put(('land',key))
+              self.rigidBodyDict = {k: v for k, v in self.rigidBodyDict.copy().items() if k != key}
+              self.vehicles = [item for item in self.vehicles if item.ID != key]
+            break
+      if len(self.vehicles) == 0: break
+
+      if targetPosUpdate: targetPos = self.rigidBodyDict[self.targetId].position
 
       for v in self.vehicles:
         v.Set_Goal(targetPos,5,0.0)

@@ -25,8 +25,10 @@ tellos_docker = {67:'TELLO-99CE5A',68:'TELLO-99CE4E'}
 #tellos_selected = (66,)
 #tellos_selected = (67,)
 #tellos_selected = (68,)
-#tellos_selected = (67,65,)
+#tellos_selected = (65,66,)
 #tellos_selected = (66,67,)
+#tellos_selected = (66,67,68,)
+tellos_selected = (65,66,67,68,)
 
 acTarg = [888,'Helmet']
 
@@ -123,8 +125,10 @@ def main(arena,telloNet):
 
   commands = queue.Queue()
   commands.put(('command',))
-  commands.put(('streamon',))
-  commands.put(('downvision 0',))
+#  commands.put(('streamon',66))
+#  commands.put(('downvision 0',66))
+#  commands.put(('streamon',))
+#  commands.put(('downvision 0',))
 
   threadMission = Thread_mission(commands,acTarg[0],rigidBodyDict,vehicleList,arena)
   threadMission.start()
@@ -136,7 +140,7 @@ def main(arena,telloNet):
   try:
     while True:
       vtupple=commands.get()
-      print(vtupple)
+#      print(vtupple)
       if (len(vtupple)==2):
         sock.sendto(vtupple[0].encode(encoding="utf-8"),telloNet[vtupple[1]][1])
       else:
