@@ -15,7 +15,7 @@ telloSpeed = 0.3
 telloFreq = 10
 
 #------------------------------------------------------------------------------
-protectScale = 0.9 # 0.9, 0.95, 1.0
+protectScale = 0.95 # 0.9, 0.95, 1.0
 class ShrinkBuilding():
   def __init__(self,vertices):
     self.polygon = affinity.scale(Polygon(vertices),xfact=protectScale, yfact=protectScale)
