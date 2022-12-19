@@ -18,8 +18,11 @@ telloFreq = 10
 
 optiFreq = 20 # Check that optitrack stream at least with this value
 
+telloSpeed = 0.3
+
 #------------------------------------------------------------------------------
 class Rigidbody(): # should be compliant with Thread_natnet 
+                   # TODO put in natnet.py
 
   def __init__(self,ac_id):
     self.ac_id = ac_id
@@ -37,13 +40,15 @@ class Vehicle():
     self.position_enu = np.zeros(3)
     self.velocity_enu = np.zeros(3)
     self.heading = 0.
+    self.goal = np.zeros(3)
 
 
-  def update(self,position,velocity,heading):
+  def update(self,position,velocity,heading,goal):
     self.position_enu = position
     self.velocity_enu = velocity
     angle = heading - np.pi / 2
     self.heading = -np.arctan2(np.sin(angle), np.cos(angle))
+    self.goal = goal
 
 
   def fly_to_enu(self,position_enu,heading=None):
@@ -104,6 +109,70 @@ class Thread_mission(threading.Thread):
   def stop(self):
     self.running = False
 
+
+  #--------------------------------------------------
+  def Flow_Velocity_Calculation(self):
+
+    flow_vels = np.zeros([len(vehicles),3])
+
+    V_sink    = np.zeros([len(vehicles),2]) # Velocity induced by sink element
+    V_source  = np.zeros([len(vehicles),2]) # Velocity induced by source elements
+    V_sum     = np.zeros([len(vehicles),2]) # V_gamma + V_sink + V_source
+    V_normal  = np.zeros([len(vehicles),2]) # Normalized velocity
+    V_flow    = np.zeros([len(vehicles),2]) # Normalized velocity inversly proportional to magnitude
+    V_norm    = np.zeros([len(vehicles),1]) # L2 norm of velocity vector
+
+    W_sink    = np.zeros([len(vehicles),1]) # Velocity induced by 3-D sink element
+    W_source  = np.zeros([len(vehicles),1]) # Velocity induced by 3-D source element
+    W_flow    = np.zeros([len(vehicles),1]) # Vertical velocity component (to be used in 3-D scenarios)
+    W_sum     = np.zeros([len(vehicles),1])
+    W_norm    = np.zeros([len(vehicles),1])
+    W_normal  = np.zeros([len(vehicles),1])
+
+    for f,vehicle in enumerate(self.vehicles):
+
+      # Velocity induced by 2D point sink, eqn. 10.2 & 10.3 in Katz & Plotkin:
+      V_sink[f,0] = (-vehicle.sink_strength*(vehicle.position[0]-vehicle.goal[0]))/
+                      (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
+      V_sink[f,1] = (-vehicle.sink_strength*(vehicle.position[1]-vehicle.goal[1]))/
+                      (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
+
+      # Velocity induced by 3-D point sink. Katz&Plotkin Eqn. 3.25
+      W_sink[f,0] = (-vehicle.sink_strength*(vehicle.position[2]-vehicle.goal[2]))/
+                      (4*np.pi*(((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2+
+                        (vehicle.position[2]-vehicle.goal[2])**2)**1.5))
+
+      # Total velocity induced :
+      V_sum[f,0] = V_sink[f,0] + V_source[f,0]
+      V_sum[f,1] = V_sink[f,1] + V_source[f,1]
+
+      # L2 norm of flow velocity:
+      V_norm[f] = (V_sum[f,0]**2 + V_sum[f,1]**2)**0.5
+      # Normalized flow velocity:
+      V_normal[f,0] = V_sum[f,0]/V_norm[f]
+      V_normal[f,1] = V_sum[f,1]/V_norm[f]
+
+      # Flow velocity inversely proportional to velocity magnitude:
+      V_flow[f,0] = V_normal[f,0]/V_norm[f]
+      V_flow[f,1] = V_normal[f,1]/V_norm[f]
+
+      W_sum[f] = W_sink[f] + W_source[f]
+
+      if W_sum[f] != 0.:
+        W_norm[f] = (W_sum[f]**2)**0.5
+        W_normal[f] = W_sum[f] /W_norm[f]
+        W_flow[f] = W_normal[f]/W_norm[f]
+        W_flow[f] = np.clip(W_flow[f],-0.07, 0.07)
+      else:
+        W_flow[f] = W_sum[f]
+
+      flow_vels[f,:] = [V_flow[f,0],V_flow[f,1],W_flow[f,0]]
+
+    return flow_vels
+  #--------------------------------------------------
+
+
+
   def guidanceLoop(self):
     telloPeriod = 1/telloFreq
    
@@ -115,12 +184,19 @@ class Thread_mission(threading.Thread):
       time.sleep(telloPeriod)
 
       for v in self.vehicles:
-        v.update(self.rigidBodyDict[v.ID].position,self.rigidBodyDict[v.ID].velocity,self.rigidBodyDict[v.ID].heading)
+        v.update(self.rigidBodyDict[v.ID].position,self.rigidBodyDict[v.ID].velocity,self.rigidBodyDict[v.ID].heading,goal_enu)
 
-      for v in self.vehicles:
-   
-        heading = np.arctan2(goal_enu[1]-v.position_enu[1],goal_enu[0]-v.position_enu[0])
-        cmd=v.fly_to_enu(goal_enu,heading)
+      flow_vels = Flow_Velocity_Calculation()
+
+      for i,v in enumerate(self.vehicles):
+        norm = np.linalg.norm(flow_vels[i])
+        flow_vels[i] = flow_vels[i]/norm
+        limited_norm = np.clip(norm,0., 0.8)
+        fixed_speed = telloSpeed
+        vel_enu = flow_vels[i]*limited_norm
+ 
+        heading = np.arctan2(v.goal[1]-v.position_enu[1],v.goal[0]-v.position_enu[0])
+        #cmd=v.fly_to_enu(goal_enu,heading)
         self.commands.put((cmd,v.ID))
 
 
