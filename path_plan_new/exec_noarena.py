@@ -13,7 +13,8 @@ import time
 tellos_routeur = {61:'TELLO-ED433E',62:'TELLO-ED4317',63:'TELLO-ED42A3',64:'TELLO-ED4381',65:'TELLO-F0B594',66:'TELLO-99CE21'}
 tellos_docker = {60:'TELLO-ED4310',67:'TELLO-99CE5A',68:'TELLO-99CE4E'}
 
-tellos_selected = (65,)
+#tellos_selected = (65,)
+tellos_selected = (65,66)
 telloFreq = 10
 
 optiFreq = 20 # Check that optitrack stream at least with this value
@@ -41,6 +42,7 @@ class Vehicle():
     self.heading = 0.
     self.goal = np.zeros(3)
     self.sink_strength   = 0
+    self.source_strength   = 0.95
 
 
   def update(self,position,velocity,heading,goal,strength):
@@ -136,14 +138,24 @@ class Thread_mission(threading.Thread):
 
       # Velocity induced by 2D point sink, eqn. 10.2 & 10.3 in Katz & Plotkin:
       V_sink[f,0] = (-vehicle.sink_strength*(vehicle.position[0]-vehicle.goal[0]))/\
-                      (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
+                    (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
       V_sink[f,1] = (-vehicle.sink_strength*(vehicle.position[1]-vehicle.goal[1]))/\
-                      (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
+                    (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
 
       # Velocity induced by 3-D point sink. Katz&Plotkin Eqn. 3.25
       W_sink[f,0] = (-vehicle.sink_strength*(vehicle.position[2]-vehicle.goal[2]))/\
-                      (4*np.pi*(((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2+
-                        (vehicle.position[2]-vehicle.goal[2])**2)**1.5))
+                    (4*np.pi*(((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2+
+                      (vehicle.position[2]-vehicle.goal[2])**2)**1.5))
+
+      othervehicleslist = vehicles[:f] + vehicles[f+1:]
+      for othervehicle in othervehicleslist:
+        V_source[f,0] += (othervehicle.source_strength*(vehicle.position[0]-othervehicle.position[0]))/\
+                         (2*np.pi*((vehicle.position[0]-othervehicle.position[0])**2+(vehicle.position[1]-othervehicle.position[1])**2))
+        V_source[f,1] += (othervehicle.source_strength*(vehicle.position[1]-othervehicle.position[1]))/\
+                         (2*np.pi*((vehicle.position[0]-othervehicle.position[0])**2+(vehicle.position[1]-othervehicle.position[1])**2))
+        W_source[f,0] += (othervehicle.source_strength*(vehicle.position[2]-othervehicle.position[2]))/\
+                         (4*np.pi*((vehicle.position[0]-othervehicle.position[0])**2+(vehicle.position[1]-othervehicle.position[1])**2+
+                           (vehicle.position[2]-othervehicle.position[2])**2)**(3/2))
 
       # Total velocity induced :
       V_sum[f,0] = V_sink[f,0] + V_source[f,0]
@@ -232,7 +244,8 @@ def main(telloNet):
   threadMotion.start()
 
   commands = queue.Queue()
-  commands.put(('command',))
+  commands.put(('command',65))
+#  commands.put(('command',))
 
   threadMission = Thread_mission(commands,rigidBodyDict,vehicleList)
   threadMission.start()
