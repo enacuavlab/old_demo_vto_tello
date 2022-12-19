@@ -18,7 +18,6 @@ telloFreq = 10
 
 optiFreq = 20 # Check that optitrack stream at least with this value
 
-telloSpeed = 0.3
 
 #------------------------------------------------------------------------------
 class Rigidbody(): # should be compliant with Thread_natnet 
@@ -37,25 +36,28 @@ class Vehicle():
 
   def __init__(self,ID):
     self.ID = ID
-    self.position_enu = np.zeros(3)
-    self.velocity_enu = np.zeros(3)
+    self.position = np.zeros(3)
+    self.velocity = np.zeros(3)
     self.heading = 0.
     self.goal = np.zeros(3)
+    self.sink_strength   = 0
 
 
-  def update(self,position,velocity,heading,goal):
-    self.position_enu = position
-    self.velocity_enu = velocity
+  def update(self,position,velocity,heading,goal,strength):
+    self.position = position
+    self.velocity = velocity
     angle = heading - np.pi / 2
     self.heading = -np.arctan2(np.sin(angle), np.cos(angle))
     self.goal = goal
+    self.sink_strength = strength
 
 
-  def fly_to_enu(self,position_enu,heading=None):
-    if heading is None:
-      heading = self.heading
-    pos_error = position_enu - self.position_enu
-    vel_enu = pos_error*1.2 - self.velocity_enu
+  def apply_flow(self,flow):
+
+    norm = np.linalg.norm(flow)
+    flow_vels = flow/norm
+    limited_norm = np.clip(norm,0., 0.8)
+    vel_enu = flow*limited_norm
 
     k = 100.
     def RBI(psi):
@@ -71,8 +73,9 @@ class Vehicle():
         x += 2*np.pi
       return x
 
+    heading = np.arctan2(self.goal[1]-self.position[1],self.goal[0]-self.position[0])
     heading = norm_ang(heading)
-    V_err_enu = vel_enu - self.velocity_enu
+    V_err_enu = vel_enu - self.velocity
     R = RBI(self.heading)
     V_err_xyz = R.dot(V_err_enu)
     err_heading = norm_ang(norm_ang(heading) - self.heading)
@@ -111,7 +114,7 @@ class Thread_mission(threading.Thread):
 
 
   #--------------------------------------------------
-  def Flow_Velocity_Calculation(self):
+  def Flow_Velocity_Calculation(self,vehicles):
 
     flow_vels = np.zeros([len(vehicles),3])
 
@@ -132,13 +135,13 @@ class Thread_mission(threading.Thread):
     for f,vehicle in enumerate(self.vehicles):
 
       # Velocity induced by 2D point sink, eqn. 10.2 & 10.3 in Katz & Plotkin:
-      V_sink[f,0] = (-vehicle.sink_strength*(vehicle.position[0]-vehicle.goal[0]))/
+      V_sink[f,0] = (-vehicle.sink_strength*(vehicle.position[0]-vehicle.goal[0]))/\
                       (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
-      V_sink[f,1] = (-vehicle.sink_strength*(vehicle.position[1]-vehicle.goal[1]))/
+      V_sink[f,1] = (-vehicle.sink_strength*(vehicle.position[1]-vehicle.goal[1]))/\
                       (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
 
       # Velocity induced by 3-D point sink. Katz&Plotkin Eqn. 3.25
-      W_sink[f,0] = (-vehicle.sink_strength*(vehicle.position[2]-vehicle.goal[2]))/
+      W_sink[f,0] = (-vehicle.sink_strength*(vehicle.position[2]-vehicle.goal[2]))/\
                       (4*np.pi*(((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2+
                         (vehicle.position[2]-vehicle.goal[2])**2)**1.5))
 
@@ -169,9 +172,8 @@ class Thread_mission(threading.Thread):
       flow_vels[f,:] = [V_flow[f,0],V_flow[f,1],W_flow[f,0]]
 
     return flow_vels
+
   #--------------------------------------------------
-
-
 
   def guidanceLoop(self):
     telloPeriod = 1/telloFreq
@@ -184,19 +186,13 @@ class Thread_mission(threading.Thread):
       time.sleep(telloPeriod)
 
       for v in self.vehicles:
-        v.update(self.rigidBodyDict[v.ID].position,self.rigidBodyDict[v.ID].velocity,self.rigidBodyDict[v.ID].heading,goal_enu)
+        v.update(self.rigidBodyDict[v.ID].position,self.rigidBodyDict[v.ID].velocity,self.rigidBodyDict[v.ID].heading,goal_enu,5)
 
-      flow_vels = Flow_Velocity_Calculation()
+      flow_vels = self.Flow_Velocity_Calculation(self.vehicles)
 
       for i,v in enumerate(self.vehicles):
-        norm = np.linalg.norm(flow_vels[i])
-        flow_vels[i] = flow_vels[i]/norm
-        limited_norm = np.clip(norm,0., 0.8)
-        fixed_speed = telloSpeed
-        vel_enu = flow_vels[i]*limited_norm
- 
-        heading = np.arctan2(v.goal[1]-v.position_enu[1],v.goal[0]-v.position_enu[0])
-        #cmd=v.fly_to_enu(goal_enu,heading)
+        cmd=v.apply_flow(flow_vels[i])
+        print(cmd)
         self.commands.put((cmd,v.ID))
 
 
