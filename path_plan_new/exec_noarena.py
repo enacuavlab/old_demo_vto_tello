@@ -15,7 +15,13 @@ tellos_docker = {60:'TELLO-ED4310',67:'TELLO-99CE5A',68:'TELLO-99CE4E'}
 
 #tellos_selected = (65,)
 tellos_selected = (65,66)
+
+acTarg = [888,'Helmet']
+
+
 telloFreq = 10
+
+telloSpeed = 1 # [0.1 .. 1.0] 
 
 optiFreq = 20 # Check that optitrack stream at least with this value
 
@@ -58,7 +64,7 @@ class Vehicle():
 
     norm = np.linalg.norm(flow)
     flow_vels = flow/norm
-    limited_norm = np.clip(norm,0., 0.8)
+    limited_norm = np.clip(norm,0., telloSpeed)
     vel_enu = flow*limited_norm
 
     k = 100.
@@ -97,9 +103,10 @@ class Vehicle():
 #------------------------------------------------------------------------------
 class Thread_mission(threading.Thread):
 
-  def __init__(self,commands,rigidBodyDict,vehicles):
+  def __init__(self,commands,targetId,rigidBodyDict,vehicles):
     threading.Thread.__init__(self)
     self.commands = commands
+    self.targetId = targetId
     self.rigidBodyDict = rigidBodyDict
     self.vehicles = vehicles
     self.running = True
@@ -116,7 +123,7 @@ class Thread_mission(threading.Thread):
 
 
   #--------------------------------------------------
-  def Flow_Velocity_Calculation(self,vehicles):
+  def compute_flow(self,vehicles):
 
     flow_vels = np.zeros([len(vehicles),3])
 
@@ -127,12 +134,7 @@ class Thread_mission(threading.Thread):
     V_flow    = np.zeros([len(vehicles),2]) # Normalized velocity inversly proportional to magnitude
     V_norm    = np.zeros([len(vehicles),1]) # L2 norm of velocity vector
 
-    W_sink    = np.zeros([len(vehicles),1]) # Velocity induced by 3-D sink element
-    W_source  = np.zeros([len(vehicles),1]) # Velocity induced by 3-D source element
     W_flow    = np.zeros([len(vehicles),1]) # Vertical velocity component (to be used in 3-D scenarios)
-    W_sum     = np.zeros([len(vehicles),1])
-    W_norm    = np.zeros([len(vehicles),1])
-    W_normal  = np.zeros([len(vehicles),1])
 
     for f,vehicle in enumerate(self.vehicles):
 
@@ -143,11 +145,6 @@ class Thread_mission(threading.Thread):
       V_sink[f,1] = (-vehicle.sink_strength*(vehicle.position[1]-vehicle.goal[1]))/\
                     (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
 
-      # Velocity induced by 3-D point sink. Katz&Plotkin Eqn. 3.25
-      W_sink[f,0] = (-vehicle.sink_strength*(vehicle.position[2]-vehicle.goal[2]))/\
-                    (4*np.pi*(((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2+
-                      (vehicle.position[2]-vehicle.goal[2])**2)**1.5))
-
       othervehicleslist = vehicles[:f] + vehicles[f+1:]
       for othervehicle in othervehicleslist:
         # Cartesian velocity reprsentation by 2D source 
@@ -155,10 +152,6 @@ class Thread_mission(threading.Thread):
                          (2*np.pi*((vehicle.position[0]-othervehicle.position[0])**2+(vehicle.position[1]-othervehicle.position[1])**2))
         V_source[f,1] += (othervehicle.source_strength*(vehicle.position[1]-othervehicle.position[1]))/\
                          (2*np.pi*((vehicle.position[0]-othervehicle.position[0])**2+(vehicle.position[1]-othervehicle.position[1])**2))
-
-        W_source[f,0] += (othervehicle.source_strength*(vehicle.position[2]-othervehicle.position[2]))/\
-                         (4*np.pi*((vehicle.position[0]-othervehicle.position[0])**2+(vehicle.position[1]-othervehicle.position[1])**2+
-                           (vehicle.position[2]-othervehicle.position[2])**2)**(3/2))
 
       # Total velocity induced :
       V_sum[f,0] = V_sink[f,0] + V_source[f,0]
@@ -174,16 +167,6 @@ class Thread_mission(threading.Thread):
       V_flow[f,0] = V_normal[f,0]/V_norm[f]
       V_flow[f,1] = V_normal[f,1]/V_norm[f]
 
-      W_sum[f] = W_sink[f] + W_source[f]
-
-      if W_sum[f] != 0.:
-        W_norm[f] = (W_sum[f]**2)**0.5
-        W_normal[f] = W_sum[f] /W_norm[f]
-        W_flow[f] = W_normal[f]/W_norm[f]
-        W_flow[f] = np.clip(W_flow[f],-0.07, 0.07)
-      else:
-        W_flow[f] = W_sum[f]
-
       flow_vels[f,:] = [V_flow[f,0],V_flow[f,1],W_flow[f,0]]
 
     return flow_vels
@@ -193,17 +176,26 @@ class Thread_mission(threading.Thread):
   def guidanceLoop(self):
     telloPeriod = 1/telloFreq
    
-    goal_enu = np.array([1.0,1.0,1.0])
-
     loop_incr = 0
     while (self.running and loop_incr < 1500) :
       loop_incr = loop_incr+1
       time.sleep(telloPeriod)
 
-      for v in self.vehicles:
-        v.update(self.rigidBodyDict[v.ID].position,self.rigidBodyDict[v.ID].velocity,self.rigidBodyDict[v.ID].heading,goal_enu,5)
+      if not self.rigidBodyDict[self.targetId].valid:
+        unvalidcpt = unvalidcpt+1
+        if unvalidcpt == 10: break
+        else: continue
+      else: unvalidcpt= 0
 
-      flow_vels = self.Flow_Velocity_Calculation(self.vehicles)
+      targetPos = self.rigidBodyDict[self.targetId].position
+      for v in self.vehicles:
+        v.update(self.rigidBodyDict[v.ID].position,
+                self.rigidBodyDict[v.ID].velocity,
+                self.rigidBodyDict[v.ID].heading,
+                targetPos,
+                5)
+
+      flow_vels = self.compute_flow(self.vehicles)
 
       for i,v in enumerate(self.vehicles):
         cmd=v.apply_flow(flow_vels[i])
@@ -239,6 +231,7 @@ def main(telloNet):
 
   vehicleList = [];
   rigidBodyDict = {};
+  rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
   for ac in tellos_selected:
     vehicleList.append(Vehicle(ac))
     rigidBodyDict[ac]=Rigidbody(ac)
@@ -247,10 +240,10 @@ def main(telloNet):
   threadMotion.start()
 
   commands = queue.Queue()
-  commands.put(('command',65))
-#  commands.put(('command',))
+#  commands.put(('command',65))
+  commands.put(('command',))
 
-  threadMission = Thread_mission(commands,rigidBodyDict,vehicleList)
+  threadMission = Thread_mission(commands,acTarg[0],rigidBodyDict,vehicleList)
   threadMission.start()
 
   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
