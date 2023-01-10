@@ -177,6 +177,7 @@ class Thread_mission(threading.Thread):
     telloPeriod = 1/telloFreq
    
     loop_incr = 0
+    unvalidcpt = 0
     while (self.running and loop_incr < 1500) :
       loop_incr = loop_incr+1
       time.sleep(telloPeriod)
