@@ -236,28 +236,29 @@ if __name__ == '__main__':
   vehicleList = []
   vehicleList.append(Vehicle(65))
 
-  vehicleList[0].position = [-4.0,4,0]
+  startPos = np.array([-4.0,4,0])
+  vehicleList[0].position = startPos
   targetPos = np.array([4.0,-4.0,2.0])
   vehicleList[0].goal = targetPos
 
-  trackList = []
-  trackList.append(vehicleList[0].position)
-  for timestep in range(1,2):
+  tracks = []
+  tracks.append(vehicleList[0].position)
+  for timestep in range(1,12):
     flow_vels = Flow_Velocity_Calculation(vehicleList,buildingListOut)
     vspeed=(flow_vels[0]/np.linalg.norm(flow_vels[0]))
     vehicleList[0].position = vehicleList[0].position + vspeed
-    trackList.append(vehicleList[0].position)
+    tracks.append(vehicleList[0].position)
 
   plt.xlim(-5, 5)
   plt.ylim(-5, 5)
   plt.grid()
 
-#  display_building(vertices,buildingListIn[0].vertices)
+  display_building(vertices,buildingListIn[0].vertices)
   
-  for i,elt in enumerate(trackList[:-1]):
-    print(elt)
-    plt.plot(elt[i],elt[i+1])
-  plt.plot(elt[0],elt[len(trackList)-1])
+  plt.plot(targetPos[0],targetPos[1],color='green',marker='o',markersize=12)
+  plt.plot(startPos[0],startPos[1],color='red',marker='o',markersize=12)
+  for i,elt in enumerate(tracks[:-1]):
+    plt.plot([tracks[i][0],tracks[i+1][0]],[tracks[i][1],tracks[i+1][1]],color='green')
 
 #  display_vehicle(targetPos,vehicleList,flow_vels)
   plt.show()
