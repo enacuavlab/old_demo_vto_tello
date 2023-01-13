@@ -119,8 +119,8 @@ class Vehicle():
   def __init__(self,ID):
 
     self.ID = ID
-    self.sink_strength = 5.0
-    self.imag_source_strength = 0.4
+    self.sink_strength = 5.0         # attraction force from goal
+    self.imag_source_strength = 0.4  # repealance force from buildings
     self.position  = np.zeros(3)
     self.goal      = np.zeros(3)
     self.V_inf     = np.zeros(3) # Freestream velocity. AoA is measured from horizontal axis, cw (+)tive
@@ -215,14 +215,14 @@ def display_building(pts,offs):
   plt.plot([offs[0][0],offs[len(pts)-1][0]],[offs[0][1],offs[len(pts)-1][1]],color='red')
 
 #--------------------------------------------------------------------------------
-def display_vehicle(targetPos,vehicleList,flow_vels):
-
-  plt.plot(targetPos[0],targetPos[1],color='green',marker='o',markersize=12)
-  for i,v in enumerate(vehicleList):
-    plt.plot(vehicleList[i].position[0],vehicleList[i].position[1],color='red',marker='o',markersize=12)
-    vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
-    plt.arrow(vehicleList[i].position[0],vehicleList[i].position[1],vspeed[0],vspeed[1], fc="k", ec="k", \
-              head_width=0.05, head_length=0.1 )
+#def display_vehicle(targetPos,vehicleList,flow_vels):
+#
+#  plt.plot(targetPos[0],targetPos[1],color='green',marker='o',markersize=12)
+#  for i,v in enumerate(vehicleList):
+#    plt.plot(vehicleList[i].position[0],vehicleList[i].position[1],color='red',marker='o',markersize=12)
+#    vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
+#    plt.arrow(vehicleList[i].position[0],vehicleList[i].position[1],vspeed[0],vspeed[1], fc="k", ec="k", \
+#              head_width=0.05, head_length=0.1 )
 
 #--------------------------------------------------------------------------------
 if __name__ == '__main__':
@@ -260,5 +260,4 @@ if __name__ == '__main__':
   for i,elt in enumerate(tracks[:-1]):
     plt.plot([tracks[i][0],tracks[i+1][0]],[tracks[i][1],tracks[i+1][1]],color='green')
 
-#  display_vehicle(targetPos,vehicleList,flow_vels)
   plt.show()
