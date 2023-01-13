@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-from common import Flow_Velocity_Calculation
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -47,9 +45,51 @@ class BuildingIn():
   
 
 #--------------------------------------------------------------------------------
-class Vehicle():
-  def __init__(self): 
+class BuildingOut():
+  def __init__(self,K_inv,pb,pcp):
+    self.K_inv = K_inv
+    self.pb = pb
+    self.pcp = pcp
+    self.nop = pb.shape[0]
+    self.gammas = {}       # Vortex Strenghts
 
+
+  def gamma_calc(self,vehicle):
+  
+    RHS             = np.zeros((self.nop,1))
+    vel_sink        = np.zeros((self.nop,2))
+    vel_source      = np.zeros((self.nop,2))
+    vel_source_imag = np.zeros((self.nop,2))
+  
+    vel_sink[:,0] = (-vehicle.sink_strength*(self.pcp[:,0]-vehicle.goal[0]))/ \
+      (2*np.pi*((self.pcp[:,0]-vehicle.goal[0])**2+(self.pcp[:,1]-vehicle.goal[1])**2))
+  
+    vel_sink[:,1] = (-vehicle.sink_strength*(self.pcp[:,1]-vehicle.goal[1]))/ \
+      (2*np.pi*((self.pcp[:,0]-vehicle.goal[0])**2+(self.pcp[:,1]-vehicle.goal[1])**2))
+  
+    vel_source_imag[:,0] = (vehicle.imag_source_strength*(self.pcp[:,0]-vehicle.position[0]))/ \
+      (2*np.pi*((self.pcp[:,0]-vehicle.position[0])**2+(self.pcp[:,1]-vehicle.position[1])**2))
+  
+    vel_source_imag[:,1] = (vehicle.imag_source_strength*(self.pcp[:,1]-vehicle.position[1]))/ \
+      (2*np.pi*((self.pcp[:,0]-vehicle.position[0])**2+(self.pcp[:,1]-vehicle.position[1])**2))
+  
+    RHS[:,0]  = -vehicle.V_inf[0]  * np.cos(self.pb[:])  \
+                -vehicle.V_inf[1]  * np.sin(self.pb[:])  \
+                -vel_sink[:,0]     * np.cos(self.pb[:])  \
+                -vel_sink[:,1]     * np.sin(self.pb[:])  \
+                -vel_source[:,0]   * np.cos(self.pb[:])  \
+                -vel_source[:,1]   * np.sin(self.pb[:])  \
+                -vel_source_imag[:,0]  * np.cos(self.pb[:])  \
+                -vel_source_imag[:,1]  * np.sin(self.pb[:])
+ 
+    self.gammas[vehicle.ID] = np.matmul(self.K_inv,RHS)
+
+
+#--------------------------------------------------------------------------------
+class Vehicle():
+  def __init__(self,ID):
+
+    self.ID = ID
     self.sink_strength = 5.0
     self.imag_source_strength = 0.4
     self.position  = np.zeros(3)
@@ -58,37 +98,12 @@ class Vehicle():
 
 
 #--------------------------------------------------------------------------------
-def gamma_calc(vehicle,K_inv,pb,pcp):
+#--------------------------------------------------------------------------------
+def Flow_Velocity_Calculation(vehicles,buildings):
 
-  nop             = pb.shape[0]
-  RHS             = np.zeros((nop,1))
-  vel_sink        = np.zeros((nop,2))
-  vel_source      = np.zeros((nop,2))
-  vel_source_imag = np.zeros((nop,2))
-
-  vel_sink[:,0] = (-vehicle.sink_strength*(pcp[:,0]-vehicle.goal[0]))/ \
-    (2*np.pi*((pcp[:,0]-vehicle.goal[0])**2+(pcp[:,1]-vehicle.goal[1])**2))
-
-  vel_sink[:,1] = (-vehicle.sink_strength*(pcp[:,1]-vehicle.goal[1]))/ \
-    (2*np.pi*((pcp[:,0]-vehicle.goal[0])**2+(pcp[:,1]-vehicle.goal[1])**2))
-
-  vel_source_imag[:,0] = (vehicle.imag_source_strength*(pcp[:,0]-vehicle.position[0]))/ \
-    (2*np.pi*((pcp[:,0]-vehicle.position[0])**2+(pcp[:,1]-vehicle.position[1])**2))
-
-  vel_source_imag[:,1] = (vehicle.imag_source_strength*(pcp[:,1]-vehicle.position[1]))/ \
-    (2*np.pi*((pcp[:,0]-vehicle.position[0])**2+(pcp[:,1]-vehicle.position[1])**2))
-
-  RHS[:,0]  = -vehicle.V_inf[0]  * np.cos(pb[:])  \
-              -vehicle.V_inf[1]  * np.sin(pb[:])  \
-              -vel_sink[:,0]     * np.cos(pb[:])  \
-              -vel_sink[:,1]     * np.sin(pb[:])  \
-              -vel_source[:,0]   * np.cos(pb[:])  \
-              -vel_source[:,1]   * np.sin(pb[:])  \
-              -vel_source_imag[:,0]  * np.cos(pb[:])  \
-              -vel_source_imag[:,1]  * np.sin(pb[:])
-
-  return (np.matmul(K_inv,RHS))
-
+  for f,vehicle in enumerate(vehicles):
+    for building in buildings:
+      building.gamma_calc(vehicle)
 
 #--------------------------------------------------------------------------------
 def display_building(pts):
@@ -105,8 +120,8 @@ def display_vehicle(targetPos,vehicleList,flow_vels):
   for i,v in enumerate(vehicleList):
     plt.plot(vehicleList[i].position[0],vehicleList[i].position[1],color='red',marker='o',markersize=12)
     vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
-    plt.arrow(vehicleList[i].position[0],vehicleList[i].position[1],vspeed[0],vspeed[1], fc="k", ec="k", \
-              head_width=0.05, head_length=0.1 )
+#    plt.arrow(vehicleList[i].position[0],vehicleList[i].position[1],vspeed[0],vspeed[1], fc="k", ec="k", \
+#              head_width=0.05, head_length=0.1 )
 
 #--------------------------------------------------------------------------------
 if __name__ == '__main__':
@@ -114,16 +129,18 @@ if __name__ == '__main__':
   buildingListIn = []
   buildingListIn.append(BuildingIn(vertices))
 
+  buildingListOut = []
+  buildingListOut.append(BuildingOut(buildingListIn[0].K_inv,buildingListIn[0].pb,buildingListIn[0].pcp))
+
   vehicleList = []
-  vehicleList.append(Vehicle())
+  vehicleList.append(Vehicle(65))
 
   targetPos = np.array([4.0,0.0,2.0])
 
   vehicleList[0].position = [-3.0,4,0]
   vehicleList[0].goal = targetPos
-  gamma_calc(vehicleList[0],buildingListIn[0].K_inv,buildingListIn[0].pb,buildingListIn[0].pcp)
 
-  flow_vels = Flow_Velocity_Calculation(vehicleList,buildingList)
+  flow_vels = Flow_Velocity_Calculation(vehicleList,buildingListOut)
 
   plt.xlim(-5, 5)
   plt.ylim(-5, 5)
