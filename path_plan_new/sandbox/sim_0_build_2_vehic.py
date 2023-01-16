@@ -81,8 +81,8 @@ if __name__ == '__main__':
 
   for timestep in range(1,12):
     flow_vels = Flow_Velocity_Calculation(vehicleList,[])
-    vspeed=(flow_vels[0]/np.linalg.norm(flow_vels[0]))
-    for elt in vehicleList:
+    for i,elt in enumerate(vehicleList):
+      vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
       elt.position = elt.position + vspeed
       tracks[elt.ID].append(elt.position)
 
@@ -94,8 +94,8 @@ if __name__ == '__main__':
     plt.plot(tracks[elt.ID][0][0],tracks[elt.ID][0][1],color='red',marker='o',markersize=12)
     plt.plot(elt.goal[0],elt.goal[1],color='green',marker='o',markersize=12)
 
+  for tr1 in tracks:
+    for i,tr2 in enumerate(tracks[tr1][:-1]):
+      plt.plot([tracks[tr1][i][0],tracks[tr1][i+1][0]],[tracks[tr1][i][1],tracks[tr1][i+1][1]],color='blue')
 
-#  for i,elt in enumerate(tracksList[0][:-1]):
-#    plt.plot([tracksList[0][i][0],tracksList[0][i+1][0]],[tracksList[0][i][1],tracksList[0][i+1][1]],color='blue')
-#
   plt.show()

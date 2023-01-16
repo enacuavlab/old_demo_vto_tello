@@ -68,22 +68,29 @@ if __name__ == '__main__':
   vehicleList[0].position = np.array([-4.0,4,2.0]) 
   vehicleList[0].goal = np.array([4.0,-4.0,2.0])
 
-  tracksList = [[]]
-  tracksList[0].append(vehicleList[0].position)
+  tracks = {}
+  for elt in vehicleList:
+    tracks[elt.ID] = []
+    tracks[elt.ID].append(elt.position)
 
   for timestep in range(1,12):
     flow_vels = Flow_Velocity_Calculation(vehicleList,[])
-    vspeed=(flow_vels[0]/np.linalg.norm(flow_vels[0]))
-    vehicleList[0].position = vehicleList[0].position + vspeed
-    tracksList[0].append(vehicleList[0].position)
+    for i,elt in enumerate(vehicleList):
+      vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
+      elt.position = elt.position + vspeed
+      tracks[elt.ID].append(elt.position)
 
   plt.xlim(-5, 5)
   plt.ylim(-5, 5)
   plt.grid()
 
-  plt.plot(tracksList[0][0][0],tracksList[0][0][1],color='red',marker='o',markersize=12)
-  plt.plot(vehicleList[0].goal[0],vehicleList[0].goal[1],color='green',marker='o',markersize=12)
-  for i,elt in enumerate(tracksList[0][:-1]):
-    plt.plot([tracksList[0][i][0],tracksList[0][i+1][0]],[tracksList[0][i][1],tracksList[0][i+1][1]],color='blue')
+  for elt in vehicleList:
+    plt.plot(tracks[elt.ID][0][0],tracks[elt.ID][0][1],color='red',marker='o',markersize=12)
+    plt.plot(elt.goal[0],elt.goal[1],color='green',marker='o',markersize=12)
+
+  for tr1 in tracks:
+    for i,tr2 in enumerate(tracks[tr1][:-1]):
+      plt.plot([tracks[tr1][i][0],tracks[tr1][i+1][0]],[tracks[tr1][i][1],tracks[tr1][i+1][1]],color='blue')
 
   plt.show()
+
