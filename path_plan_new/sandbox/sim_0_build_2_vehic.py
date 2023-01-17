@@ -13,6 +13,7 @@ class Vehicle():
   def __init__(self,ID):
 
     self.ID = ID
+    self.source_strength = 0.95      # Tello repelance
     self.sink_strength = 5.0         # attraction force from goal
     self.imag_source_strength = 0.4  # repealance force from buildings
     self.position  = np.zeros(3)
@@ -43,6 +44,15 @@ def Flow_Velocity_Calculation(vehicles,buildings):
     V_sink[f,1] = (-vehicle.sink_strength*(vehicle.position[1]-vehicle.goal[1]))/ \
                   (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
 
+    othervehicleslist = vehicles[:f] + vehicles[f+1:]
+    # Velocity induced by 2D point source, eqn. 10.2 & 10.3 in Katz & Plotkin:
+    for othervehicle in othervehicleslist:
+      V_source[f,0] += (othervehicle.source_strength*(vehicle.position[0]-othervehicle.position[0]))/ \
+        (2*np.pi*((vehicle.position[0]-othervehicle.position[0])**2+(vehicle.position[1]-othervehicle.position[1])**2))
+      V_source[f,1] += (othervehicle.source_strength*(vehicle.position[1]-othervehicle.position[1]))/ \
+        (2*np.pi*((vehicle.position[0]-othervehicle.position[0])**2+(vehicle.position[1]-othervehicle.position[1])**2))
+
+
     # Total velocity induced by all elements on map:
     V_sum[f,0] = V_gamma[f,0] + V_sink[f,0] + vehicle.V_inf[0] + V_source[f,0]
     V_sum[f,1] = V_gamma[f,1] + V_sink[f,1] + vehicle.V_inf[1] + V_source[f,1]
@@ -67,11 +77,11 @@ if __name__ == '__main__':
   vehicleList = []
 
   vehicleList.append(Vehicle(65))
-  vehicleList[0].position = np.array([-4.0,4,2.0]) 
-  vehicleList[0].goal = np.array([4.0,-4.0,2.0])
+  vehicleList[0].position = np.array([-3.6,3.6,2.0]) 
+  vehicleList[0].goal = np.array([3.6,-3.6,2.0])
 
   vehicleList.append(Vehicle(66))
-  vehicleList[1].position = np.array([3.0,3,2.0]) 
+  vehicleList[1].position = np.array([3.6,3.6,2.0]) 
   vehicleList[1].goal = np.array([-3.0,-3.0,2.0])
 
   tracks = {}
@@ -79,7 +89,7 @@ if __name__ == '__main__':
     tracks[elt.ID] = []
     tracks[elt.ID].append(elt.position)
 
-  for timestep in range(1,12):
+  for timestep in range(1,11):
     flow_vels = Flow_Velocity_Calculation(vehicleList,[])
     for i,elt in enumerate(vehicleList):
       vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
