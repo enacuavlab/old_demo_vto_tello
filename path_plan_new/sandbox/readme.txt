@@ -1,1 +1,1 @@
-These are minimal code test for implemented condition with or without several vehicles and buildings
+These are minimal code implementing test conditions with or without several vehicles and buildings

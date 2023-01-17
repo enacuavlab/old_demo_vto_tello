@@ -6,17 +6,26 @@ import math
 
 import matplotlib.pyplot as plt
 
-vertices = np.array([
+building1_name = "Building881"
+building1_vertices = np.array([
   [ 0.070078,-1.021371, 4.2 ],
   [-0.834514,-1.038646, 4.2 ],
   [-0.83802, -0.122632, 4.2 ],
   [ 0.058454,-0.113969, 4.2 ]])
+
+building2_name = "Building882"
+building2_vertices = np.array([
+  [ 2.070078,-1.021371, 4.2 ],
+  [ 2.834514,-1.038646, 4.2 ],
+  [ 2.83802, -0.122632, 4.2 ],
+  [ 2.058454,-0.113969, 4.2 ]])
 
 #--------------------------------------------------------------------------------
 class BuildingIn():
   def __init__(self,name,vertices): # Buildings(obstacles) are defined by coordinates of their vertices.
     self.name = name
     self.vertices = vertices
+    self.unflated = vertices
     panels = np.array([])
 
 #    rad = 0.2
@@ -71,37 +80,39 @@ class BuildingIn():
                      * ( (self.pcp[m][1]-vp[n][1] ) * np.cos(self.pb[m] ) - ( self.pcp[m][0] - vp[n][0] ) * np.sin(self.pb[m] ) )
                      / ( (self.pcp[m][0]-vp[n][0] )**2 + (self.pcp[m][1] - vp[n][1] )**2 ) )
     self.K_inv = np.linalg.inv(K) # Inverse of coefficient matrix: (Needed for solution of panel method eqn.)
-  
+
 
 #--------------------------------------------------------------------------------
 class BuildingOut():
-  def __init__(self,K_inv,pb,pcp):
+  def __init__(self,K_inv,pb,pcp,vertices,unflated):
     self.K_inv = K_inv
     self.pb = pb
     self.pcp = pcp
+    self.vertices  = vertices
+    self.unflated  = unflated
     self.nop = pb.shape[0]
     self.gammas = {}       # Vortex Strenghts
 
 
   def gamma_calc(self,vehicle):
-  
+
     RHS             = np.zeros((self.nop,1))
     vel_sink        = np.zeros((self.nop,2))
     vel_source      = np.zeros((self.nop,2))
     vel_source_imag = np.zeros((self.nop,2))
-  
+
     vel_sink[:,0] = (-vehicle.sink_strength*(self.pcp[:,0]-vehicle.goal[0]))/ \
       (2*np.pi*((self.pcp[:,0]-vehicle.goal[0])**2+(self.pcp[:,1]-vehicle.goal[1])**2))
-  
+
     vel_sink[:,1] = (-vehicle.sink_strength*(self.pcp[:,1]-vehicle.goal[1]))/ \
       (2*np.pi*((self.pcp[:,0]-vehicle.goal[0])**2+(self.pcp[:,1]-vehicle.goal[1])**2))
-  
+
     vel_source_imag[:,0] = (vehicle.imag_source_strength*(self.pcp[:,0]-vehicle.position[0]))/ \
       (2*np.pi*((self.pcp[:,0]-vehicle.position[0])**2+(self.pcp[:,1]-vehicle.position[1])**2))
-  
+
     vel_source_imag[:,1] = (vehicle.imag_source_strength*(self.pcp[:,1]-vehicle.position[1]))/ \
       (2*np.pi*((self.pcp[:,0]-vehicle.position[0])**2+(self.pcp[:,1]-vehicle.position[1])**2))
-  
+
     RHS[:,0]  = -vehicle.V_inf[0]  * np.cos(self.pb[:])  \
                 -vehicle.V_inf[1]  * np.sin(self.pb[:])  \
                 -vel_sink[:,0]     * np.cos(self.pb[:])  \
@@ -110,9 +121,8 @@ class BuildingOut():
                 -vel_source[:,1]   * np.sin(self.pb[:])  \
                 -vel_source_imag[:,0]  * np.cos(self.pb[:])  \
                 -vel_source_imag[:,1]  * np.sin(self.pb[:])
- 
-    self.gammas[vehicle.ID] = np.matmul(self.K_inv,RHS)
 
+    self.gammas[vehicle.ID] = np.matmul(self.K_inv,RHS)
 
 #--------------------------------------------------------------------------------
 class Vehicle():
@@ -138,10 +148,6 @@ def Flow_Velocity_Calculation(vehicles,buildings):
   V_norm    = np.zeros([len(vehicles),1]) # L2 norm of velocity vector
   V_normal  = np.zeros([len(vehicles),2]) # Normalized velocity
   V_flow    = np.zeros([len(vehicles),2]) # Normalized velocity inversly proportional to magnitude
-  W_source  = np.zeros([len(vehicles),1]) # Velocity induced by 3-D source element
-  W_sum     = np.zeros([len(vehicles),1])
-  W_norm    = np.zeros([len(vehicles),1])
-  W_normal  = np.zeros([len(vehicles),1])
   W_flow    = np.zeros([len(vehicles),1]) # Vertical velocity component (to be used in 3-D scenarios)
   flow_vels = np.zeros([len(vehicles),3])
 
@@ -156,9 +162,6 @@ def Flow_Velocity_Calculation(vehicles,buildings):
                   (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
     V_sink[f,1] = (-vehicle.sink_strength*(vehicle.position[1]-vehicle.goal[1]))/ \
                   (2*np.pi*((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2))
-    # Velocity induced by 3-D point sink. Katz&Plotkin Eqn. 3.25
-    W_sink[f,0] = (-vehicle.sink_strength*(vehicle.position[2]-vehicle.goal[2]))/ \
-                (4*np.pi*(((vehicle.position[0]-vehicle.goal[0])**2+(vehicle.position[1]-vehicle.goal[1])**2+(vehicle.position[2]-vehicle.goal[2])**2)**1.5))
 
     for building in buildings:
       u = np.zeros((building.nop,1))
@@ -191,73 +194,57 @@ def Flow_Velocity_Calculation(vehicles,buildings):
     V_flow[f,0] = V_normal[f,0]/V_norm[f]
     V_flow[f,1] = V_normal[f,1]/V_norm[f]
 
-    W_sum[f] = W_sink[f] + W_source[f]
-    if W_sum[f] != 0.:
-      W_norm[f] = (W_sum[f]**2)**0.5
-      W_normal[f] = W_sum[f] /W_norm[f]
-      W_flow[f] = W_normal[f]/W_norm[f]
-      W_flow[f] = np.clip(W_flow[f],-0.07, 0.07)
-    else:
-      W_flow[f] = W_sum[f]
-
     flow_vels[f,:] = [V_flow[f,0],V_flow[f,1],W_flow[f,0]]
 
   return flow_vels
 
-
-#--------------------------------------------------------------------------------
-def display_building(pts,offs):
-
-  for i,elt in enumerate(pts[:-1]):
-    plt.plot([pts[i][0],pts[i+1][0]],[pts[i][1],pts[i+1][1]],color='blue')
-    plt.plot([offs[i][0],offs[i+1][0]],[offs[i][1],offs[i+1][1]],color='red')
-  plt.plot([pts[0][0],pts[len(pts)-1][0]],[pts[0][1],pts[len(pts)-1][1]],color='blue')
-  plt.plot([offs[0][0],offs[len(pts)-1][0]],[offs[0][1],offs[len(pts)-1][1]],color='red')
-
-#--------------------------------------------------------------------------------
-#def display_vehicle(targetPos,vehicleList,flow_vels):
-#
-#  plt.plot(targetPos[0],targetPos[1],color='green',marker='o',markersize=12)
-#  for i,v in enumerate(vehicleList):
-#    plt.plot(vehicleList[i].position[0],vehicleList[i].position[1],color='red',marker='o',markersize=12)
-#    vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
-#    plt.arrow(vehicleList[i].position[0],vehicleList[i].position[1],vspeed[0],vspeed[1], fc="k", ec="k", \
-#              head_width=0.05, head_length=0.1 )
-
 #--------------------------------------------------------------------------------
 if __name__ == '__main__':
-
-  buildingListIn = []
-  buildingListIn.append(BuildingIn("Building1",vertices))
-
-  buildingListOut = []
-  buildingListOut.append(BuildingOut(buildingListIn[0].K_inv,buildingListIn[0].pb,buildingListIn[0].pcp))
 
   vehicleList = []
   vehicleList.append(Vehicle(65))
 
-  startPos = np.array([-4.0,4,0])
-  vehicleList[0].position = startPos
-  targetPos = np.array([4.0,-4.0,2.0])
-  vehicleList[0].goal = targetPos
+  vehicleList[0].position = np.array([-4.0,4,2.0]) 
+  vehicleList[0].goal = np.array([4.0,-4.0,2.0])
 
-  tracks = []
-  tracks.append(vehicleList[0].position)
+  buildingListIn = []
+  buildingListIn.append(BuildingIn(building1_name,building1_vertices))
+  buildingListIn.append(BuildingIn(building2_name,building2_vertices))
+
+  buildingListOut = []
+  for bld in buildingListIn:
+    buildingListOut.append(BuildingOut(bld.K_inv,bld.pb,bld.pcp,bld.vertices,bld.unflated))
+
+  tracks = {}
+  for elt in vehicleList:
+    tracks[elt.ID] = []
+    tracks[elt.ID].append(elt.position)
+
   for timestep in range(1,12):
     flow_vels = Flow_Velocity_Calculation(vehicleList,buildingListOut)
-    vspeed=(flow_vels[0]/np.linalg.norm(flow_vels[0]))
-    vehicleList[0].position = vehicleList[0].position + vspeed
-    tracks.append(vehicleList[0].position)
+    for i,elt in enumerate(vehicleList):
+      vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
+      elt.position = elt.position + vspeed
+      tracks[elt.ID].append(elt.position)
 
   plt.xlim(-5, 5)
   plt.ylim(-5, 5)
   plt.grid()
 
-  display_building(vertices,buildingListIn[0].vertices)
-  
-  plt.plot(targetPos[0],targetPos[1],color='green',marker='o',markersize=12)
-  plt.plot(startPos[0],startPos[1],color='red',marker='o',markersize=12)
-  for i,elt in enumerate(tracks[:-1]):
-    plt.plot([tracks[i][0],tracks[i+1][0]],[tracks[i][1],tracks[i+1][1]],color='green')
+  for bld in buildingListOut:
+    for i,elt in enumerate(bld.vertices[:-1]):
+      plt.plot([bld.vertices[i][0],bld.vertices[i+1][0]],[bld.vertices[i][1],bld.vertices[i+1][1]],color='blue')
+      plt.plot([bld.unflated[i][0],bld.unflated[i+1][0]],[bld.unflated[i][1],bld.unflated[i+1][1]],color='red')
+    plt.plot([bld.vertices[0][0],bld.vertices[len(bld.vertices)-1][0]],[bld.vertices[0][1],bld.vertices[len(bld.vertices)-1][1]],color='blue')
+    plt.plot([bld.unflated[0][0],bld.unflated[len(bld.unflated)-1][0]],[bld.unflated[0][1],bld.unflated[len(bld.unflated)-1][1]],color='red')
+
+
+  for elt in vehicleList:
+    plt.plot(tracks[elt.ID][0][0],tracks[elt.ID][0][1],color='red',marker='o',markersize=12)
+    plt.plot(elt.goal[0],elt.goal[1],color='green',marker='o',markersize=12)
+
+  for tr1 in tracks:
+    for i,tr2 in enumerate(tracks[tr1][:-1]):
+      plt.plot([tracks[tr1][i][0],tracks[tr1][i+1][0]],[tracks[tr1][i][1],tracks[tr1][i+1][1]],color='blue')
 
   plt.show()
