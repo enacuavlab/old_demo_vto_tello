@@ -149,6 +149,8 @@ class Vehicle():
     self.goal      = np.zeros(3)
     self.V_inf     = np.zeros(3) # Freestream velocity. AoA is measured from horizontal axis, cw (+)tive
 
+  def __eq__(self, other):           # This function enable to remove Vechicle from list
+    return other and self.ID == other.ID
 
 #--------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------
@@ -258,6 +260,14 @@ if __name__ == '__main__':
 
   #--------------------------------------------------------------------------------
   def arena_update(label):
+    global vehicleList
+    if label == 'v1':
+      if Vehicle(65) in vehicleList: 
+        vehicleList.remove(Vehicle(65))
+      else:
+        vehicleList.add(Vehicle(65))
+
+
     print(label)
 
 
@@ -275,8 +285,10 @@ if __name__ == '__main__':
       for i,elt in enumerate(bld.vertices[:-1]):
         gs0.plot([bld.vertices[i][0],bld.vertices[i+1][0]],[bld.vertices[i][1],bld.vertices[i+1][1]],color='blue')
         gs0.plot([bld.unflated[i][0],bld.unflated[i+1][0]],[bld.unflated[i][1],bld.unflated[i+1][1]],color='red')
-      gs0.plot([bld.vertices[0][0],bld.vertices[len(bld.vertices)-1][0]],[bld.vertices[0][1],bld.vertices[len(bld.vertices)-1][1]],color='blue')
-      gs0.plot([bld.unflated[0][0],bld.unflated[len(bld.unflated)-1][0]],[bld.unflated[0][1],bld.unflated[len(bld.unflated)-1][1]],color='red')
+      gs0.plot([bld.vertices[0][0],bld.vertices[len(bld.vertices)-1][0]],[bld.vertices[0][1],bld.vertices[len(bld.vertices)-1][1]],\
+               color='blue')
+      gs0.plot([bld.unflated[0][0],bld.unflated[len(bld.unflated)-1][0]],[bld.unflated[0][1],bld.unflated[len(bld.unflated)-1][1]], \
+               color='red')
   
     for elt in vehicleList:
       gs0.plot(tracks[elt.ID][0][0],tracks[elt.ID][0][1],color='red',marker='o',markersize=12)
