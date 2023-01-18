@@ -247,7 +247,8 @@ if __name__ == '__main__':
     tracks[elt.ID] = []
     tracks[elt.ID].append(elt.position)
 
-  for timestep in range(1,18):
+  timestepmax = 32
+  for timestep in range(1,timestepmax):
     flow_vels = Flow_Velocity_Calculation(vehicleList,buildingListOut)
     for i,elt in enumerate(vehicleList):
       vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
@@ -276,14 +277,14 @@ if __name__ == '__main__':
       gs0.plot(elt.goal[0],elt.goal[1],color='green',marker='o',markersize=12)
 
   #--------------------------------------------------------------------------------
-  def update(a):
+  def display_update(a):
     global slider_stored
     if int(a) != slider_stored:
       if int(a) < slider_stored: display_background()
       slider_stored = int(a)
       for tr1 in tracks:
         for i,tr2 in enumerate(tracks[tr1][:-1]):
-          if i <= slider_stored:
+          if i < slider_stored:
             gs0.plot([tracks[tr1][i][0],tracks[tr1][i+1][0]],[tracks[tr1][i][1],tracks[tr1][i+1][1]],color='blue')
     fig.canvas.draw_idle()
 
@@ -293,7 +294,7 @@ if __name__ == '__main__':
   slider_stored = 0
 
   axfreq = fig.add_axes([0.25, 0.1, 0.65, 0.03])
-  time_slider = Slider(axfreq,'time',0,16,0)
-  time_slider.on_changed(update)
+  time_slider = Slider(axfreq,'time',0,timestepmax,0)
+  time_slider.on_changed(display_update)
   
   plt.show()
