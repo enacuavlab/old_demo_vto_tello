@@ -10,14 +10,14 @@ import matplotlib.gridspec as gridspec
 
 from matplotlib.widgets import Slider,CheckButtons
 
-building1_name = "Building881"
+building1_name = "881"
 building1_vertices = np.array([
   [ 0.070078,-1.021371, 4.2 ],
   [-0.834514,-1.038646, 4.2 ],
   [-0.83802, -0.122632, 4.2 ],
   [ 0.058454,-0.113969, 4.2 ]])
 
-building2_name = "Building882"
+building2_name = "882"
 building2_vertices = np.array([
   [ 2.070078,-1.021371, 4.2 ],
   [ 2.834514,-1.038646, 4.2 ],
@@ -227,53 +227,27 @@ def Flow_Velocity_Calculation(vehicles,buildings):
 #--------------------------------------------------------------------------------
 if __name__ == '__main__':
 
-  vehicleList = []
-
-  vehicleList.append(Vehicle(65))
-  vehicleList[0].position = np.array([-4.0,4,2.0]) 
-  vehicleList[0].goal = np.array([4.0,-4.0,2.0])
-
-  vehicleList.append(Vehicle(66))
-  vehicleList[1].position = np.array([3.0,3,2.0])
-  vehicleList[1].goal = np.array([-3.0,-3.0,2.0])
 
   buildingListIn = []
   buildingListIn.append(BuildingIn(building1_name,building1_vertices))
   buildingListIn.append(BuildingIn(building2_name,building2_vertices))
 
   buildingListOut = []
-  for bld in buildingListIn:
-    buildingListOut.append(BuildingOut(bld.K_inv,bld.pb,bld.pcp,bld.vertices,bld.unflated))
-
   tracks = {}
-  for elt in vehicleList:
-    tracks[elt.ID] = []
-    tracks[elt.ID].append(elt.position)
-
   timestepmax = 32
-  for timestep in range(1,timestepmax):
-    flow_vels = Flow_Velocity_Calculation(vehicleList,buildingListOut)
-    for i,elt in enumerate(vehicleList):
-      vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
-      elt.position = elt.position + vspeed * 0.5
-      tracks[elt.ID].append(elt.position)
+  slider_stored = 0
 
-  #--------------------------------------------------------------------------------
-  def arena_update(label):
-    global vehicleList
-    if label == 'v1':
-      if Vehicle(65) in vehicleList: 
-        vehicleList.remove(Vehicle(65))
-      else:
-        vehicleList.add(Vehicle(65))
+  vehicleList = []
+  vehicleList.append(Vehicle(65))
+  vehicleList.append(Vehicle(66))
+  defaultpos = ([-4.0,4,2.0],[3.0,3,2.0])
+  defaultgoal= ([4.0,-4.0,2.0],[-3.0,-3.0,2.0])
 
-
-    print(label)
-
+  fig, gs0 = plt.subplots()
 
   #--------------------------------------------------------------------------------
   def display_background():
-    global fig,gs0
+    global fig,gs0,buildingListOut,vehicleList
     gs0.clear()
     fig.subplots_adjust(left=0.25, bottom=0.25)
     gs0.set_xlabel('Time [s]')
@@ -295,8 +269,58 @@ if __name__ == '__main__':
       gs0.plot(elt.goal[0],elt.goal[1],color='green',marker='o',markersize=12)
 
   #--------------------------------------------------------------------------------
+  def set_default():
+    global vehicleList,defaultpos,defaultgoal
+    for i,elt in enumerate(vehicleList):
+      elt.position = defaultpos[i]
+      elt.goal = defaultgoal[i]
+
+  #--------------------------------------------------------------------------------
+  def run_track():
+    global buildingListOut,buildingListIn,vehicleList,tracks,timestepmax,slider_stored
+
+    set_default()
+
+    buildingListOut.clear()
+    tracks.clear()
+    slider_stored = 0
+
+    for bld in buildingListIn:
+      buildingListOut.append(BuildingOut(bld.K_inv,bld.pb,bld.pcp,bld.vertices,bld.unflated))
+  
+    for elt in vehicleList:
+      tracks[elt.ID] = []
+      tracks[elt.ID].append(elt.position)
+  
+    for timestep in range(1,timestepmax):
+      flow_vels = Flow_Velocity_Calculation(vehicleList,buildingListOut)
+      for i,elt in enumerate(vehicleList):
+        vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
+        elt.position = elt.position + vspeed * 0.5
+        tracks[elt.ID].append(elt.position)
+
+    display_background()
+     
+
+  #--------------------------------------------------------------------------------
+  def arena_update(label):
+    global vehicleList,buildingListIn
+    labelInt = int(label)
+    if labelInt in (65,66):
+      print(labelInt)
+      if Vehicle(labelInt) in vehicleList: vehicleList.remove(Vehicle(labelInt))
+      else: vehicleList.append(Vehicle(labelInt))
+#    if labelInt in (881,882):
+#      if BuildingIn(labelInt) in vehicleList: vehicleList.remove(BuildingIn(labelInt))
+#      else: vehicleList.append(BuildingIn(labelInt))
+
+      if vehicleList:
+        run_track()
+
+
+  #--------------------------------------------------------------------------------
   def display_update(a):
-    global slider_stored
+    global slider_stored,tracks,gs0,fig
     if int(a) != slider_stored:
       if int(a) < slider_stored: display_background()
       slider_stored = int(a)
@@ -306,16 +330,14 @@ if __name__ == '__main__':
             gs0.plot([tracks[tr1][i][0],tracks[tr1][i+1][0]],[tracks[tr1][i][1],tracks[tr1][i+1][1]],color='blue')
     fig.canvas.draw_idle()
 
-
-  fig, gs0 = plt.subplots()
-  display_background()
-  slider_stored = 0
+  #--------------------------------------------------------------------------------
+  run_track()
 
   axtime = fig.add_axes([0.25, 0.1, 0.65, 0.03])
   time_slider = Slider(axtime,'time',0,timestepmax,0)
 
   rax = plt.axes([0.025, 0.5, 0.15, 0.15], facecolor='lightgoldenrodyellow')
-  check_button = CheckButtons(rax, ('v1', 'v2', 'b1', 'b2'), (1,1,1,1))
+  check_button = CheckButtons(rax, ('65', '66', '881', '882'), (1,1,0,0))
 
   time_slider.on_changed(display_update)
   check_button.on_clicked(arena_update)
