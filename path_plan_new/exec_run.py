@@ -129,8 +129,8 @@ def main(arena,telloNet):
   commands.put(('command',))
 #  commands.put(('streamon',66))
 #  commands.put(('downvision 0',66))
-#  commands.put(('streamon',))
-#  commands.put(('downvision 0',))
+  commands.put(('streamon',))
+  commands.put(('downvision 0',))
 
   threadMission = Thread_mission(commands,acTarg[0],rigidBodyDict,vehicleList,arena)
   threadMission.start()

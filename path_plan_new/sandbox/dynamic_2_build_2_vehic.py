@@ -94,11 +94,6 @@ class BuildingIn():
 
 
 
-  def __eq__(self, other):           # This function enable to remove BuildingIn from list
-#    return self.name == other.name and self.vertices == other.vertices
-    return self.name == other.name  # refine as needed
-
-
 #--------------------------------------------------------------------------------
 class BuildingOut():
   def __init__(self,K_inv,pb,pcp,vertices,unflated):
@@ -162,8 +157,6 @@ class Vehicle():
     self.goal      = np.zeros(3)
     self.V_inf     = np.zeros(3) # Freestream velocity. AoA is measured from horizontal axis, cw (+)tive
 
-  def __eq__(self, other):           # This function enable to remove Vechicle from list
-    return other and self.ID == other.ID
 
 #--------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------
@@ -242,8 +235,8 @@ if __name__ == '__main__':
 
 
   buildingListIn = []
-  buildingListIn.append(BuildingIn(building1_name,building1_vertices))
-  buildingListIn.append(BuildingIn(building2_name,building2_vertices))
+  buildingListIn.append(BuildingIn(int(building1_name),building1_vertices))
+  buildingListIn.append(BuildingIn(int(building2_name),building2_vertices))
 
   buildingListOut = []
   tracks = {}
@@ -319,20 +312,35 @@ if __name__ == '__main__':
 
   #--------------------------------------------------------------------------------
   def arena_update(label):
-    global vehicleList,buildingListIn
+    global vehicleList,buildingListIn,time_slider,slider_stored,tracks
     labelInt = int(label)
+    deleted = False
+
     if labelInt in (65,66):
-      if Vehicle(labelInt) in vehicleList: vehicleList.remove(Vehicle(labelInt))
-      else: vehicleList.append(Vehicle(labelInt))
+      for i,elt in enumerate(vehicleList):
+        if elt.ID == labelInt: 
+          del vehicleList[i]
+          deleted = True
+      if deleted == False:
+        vehicleList.append(Vehicle(labelInt))
+
     if labelInt in (881,882):
-      vertices = building1_vertices
-      print(labelInt,vertices)
-      if BuildingIn(labelInt,vertices) in buildingListIn: print("IN")
-#      if BuildingIn(labelInt) in buildingListIn: buildingListIn.remove(BuildingIn(labelInt))
-#      else: buildingListIn.append(BuildingIn(labelInt))
+      for i,elt in enumerate(buildingListIn):
+        if elt.name == labelInt: 
+          del buildingListIn[i]
+          deleted = True
+      if deleted == False:
+        if labelInt == 881: vertices = building1_vertices
+        if labelInt == 882: vertices = building2_vertices
+        buildingListIn.append(BuildingIn(labelInt,vertices))
 
     if vehicleList:
       run_track()
+    else:
+      time_slider.set_val(0)
+      slider_stored = 0
+      tracks.clear()
+      display_background()
 
 
   #--------------------------------------------------------------------------------
@@ -346,6 +354,7 @@ if __name__ == '__main__':
           if i < slider_stored:
             gs0.plot([tracks[tr1][i][0],tracks[tr1][i+1][0]],[tracks[tr1][i][1],tracks[tr1][i+1][1]],color='blue')
     fig.canvas.draw_idle()
+
 
   #--------------------------------------------------------------------------------
   axtime = fig.add_axes([0.25, 0.1, 0.65, 0.03])
