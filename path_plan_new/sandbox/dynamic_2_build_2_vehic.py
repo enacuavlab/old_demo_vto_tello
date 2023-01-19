@@ -24,6 +24,13 @@ building2_vertices = np.array([
   [ 2.83802, -0.122632, 4.2 ],
   [ 2.058454,-0.113969, 4.2 ]])
 
+
+vehicle1_name = "65"
+vehicle1_init_pos_goal = ([-4.0,4,2.0],[4.0,-4.0,2.0])
+
+vehicle2_name = "66"
+vehicle2_init_pos_goal = ([3.0,3,2.0],[-3.0,-3.0,2.0])
+
 #--------------------------------------------------------------------------------
 class BuildingIn():
   def __init__(self,name,vertices): # Buildings(obstacles) are defined by coordinates of their vertices.
@@ -84,6 +91,12 @@ class BuildingIn():
                      * ( (self.pcp[m][1]-vp[n][1] ) * np.cos(self.pb[m] ) - ( self.pcp[m][0] - vp[n][0] ) * np.sin(self.pb[m] ) )
                      / ( (self.pcp[m][0]-vp[n][0] )**2 + (self.pcp[m][1] - vp[n][1] )**2 ) )
     self.K_inv = np.linalg.inv(K) # Inverse of coefficient matrix: (Needed for solution of panel method eqn.)
+
+
+
+  def __eq__(self, other):           # This function enable to remove BuildingIn from list
+#    return self.name == other.name and self.vertices == other.vertices
+    return self.name == other.name  # refine as needed
 
 
 #--------------------------------------------------------------------------------
@@ -238,10 +251,8 @@ if __name__ == '__main__':
   slider_stored = 0
 
   vehicleList = []
-  vehicleList.append(Vehicle(65))
-  vehicleList.append(Vehicle(66))
-  defaultpos = ([-4.0,4,2.0],[3.0,3,2.0])
-  defaultgoal= ([4.0,-4.0,2.0],[-3.0,-3.0,2.0])
+  vehicleList.append(Vehicle(int(vehicle1_name)))
+  vehicleList.append(Vehicle(int(vehicle2_name)))
 
   fig, gs0 = plt.subplots()
 
@@ -254,7 +265,7 @@ if __name__ == '__main__':
     gs0.set_xlim(-5, 5)
     gs0.set_ylim(-5, 5)
     gs0.grid()
-  
+
     for bld in buildingListOut:
       for i,elt in enumerate(bld.vertices[:-1]):
         gs0.plot([bld.vertices[i][0],bld.vertices[i+1][0]],[bld.vertices[i][1],bld.vertices[i+1][1]],color='blue')
@@ -268,16 +279,19 @@ if __name__ == '__main__':
       gs0.plot(tracks[elt.ID][0][0],tracks[elt.ID][0][1],color='red',marker='o',markersize=12)
       gs0.plot(elt.goal[0],elt.goal[1],color='green',marker='o',markersize=12)
 
+    fig.canvas.draw_idle()
+
   #--------------------------------------------------------------------------------
   def set_default():
-    global vehicleList,defaultpos,defaultgoal
+    global vehicleList
     for i,elt in enumerate(vehicleList):
-      elt.position = defaultpos[i]
-      elt.goal = defaultgoal[i]
+      if elt.ID == 65: elt.position,elt.goal = vehicle1_init_pos_goal
+      if elt.ID == 66: elt.position,elt.goal = vehicle2_init_pos_goal
+      
 
   #--------------------------------------------------------------------------------
   def run_track():
-    global buildingListOut,buildingListIn,vehicleList,tracks,timestepmax,slider_stored
+    global buildingListOut,buildingListIn,vehicleList,tracks,timestepmax,slider_stored,time_slider
 
     set_default()
 
@@ -299,6 +313,7 @@ if __name__ == '__main__':
         elt.position = elt.position + vspeed * 0.5
         tracks[elt.ID].append(elt.position)
 
+    time_slider.set_val(0)
     display_background()
      
 
@@ -307,15 +322,17 @@ if __name__ == '__main__':
     global vehicleList,buildingListIn
     labelInt = int(label)
     if labelInt in (65,66):
-      print(labelInt)
       if Vehicle(labelInt) in vehicleList: vehicleList.remove(Vehicle(labelInt))
       else: vehicleList.append(Vehicle(labelInt))
-#    if labelInt in (881,882):
-#      if BuildingIn(labelInt) in vehicleList: vehicleList.remove(BuildingIn(labelInt))
-#      else: vehicleList.append(BuildingIn(labelInt))
+    if labelInt in (881,882):
+      vertices = building1_vertices
+      print(labelInt,vertices)
+      if BuildingIn(labelInt,vertices) in buildingListIn: print("IN")
+#      if BuildingIn(labelInt) in buildingListIn: buildingListIn.remove(BuildingIn(labelInt))
+#      else: buildingListIn.append(BuildingIn(labelInt))
 
-      if vehicleList:
-        run_track()
+    if vehicleList:
+      run_track()
 
 
   #--------------------------------------------------------------------------------
@@ -331,15 +348,15 @@ if __name__ == '__main__':
     fig.canvas.draw_idle()
 
   #--------------------------------------------------------------------------------
-  run_track()
-
   axtime = fig.add_axes([0.25, 0.1, 0.65, 0.03])
   time_slider = Slider(axtime,'time',0,timestepmax,0)
 
   rax = plt.axes([0.025, 0.5, 0.15, 0.15], facecolor='lightgoldenrodyellow')
-  check_button = CheckButtons(rax, ('65', '66', '881', '882'), (1,1,0,0))
+  check_button = CheckButtons(rax, ('65', '66', '881', '882'), (1,1,1,1))
 
   time_slider.on_changed(display_update)
   check_button.on_clicked(arena_update)
-  
+ 
+  run_track()
+
   plt.show()
