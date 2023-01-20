@@ -188,6 +188,7 @@ def Flow_Velocity_Calculation(vehicles,buildings):
 
     othervehicleslist = vehicles[:f] + vehicles[f+1:]
     # Velocity induced by 2D point source, eqn. 10.2 & 10.3 in Katz & Plotkin:
+
     for othervehicle in othervehicleslist:
       V_source[f,0] += (othervehicle.source_strength*(vehicle.position[0]-othervehicle.position[0]))/ \
         (2*np.pi*((vehicle.position[0]-othervehicle.position[0])**2+(vehicle.position[1]-othervehicle.position[1])**2))
@@ -240,7 +241,7 @@ if __name__ == '__main__':
 
   buildingListOut = []
   tracks = {}
-  timestepmax = 32
+  timestepmax = 150
   slider_stored = 0
 
   vehicleList = []
@@ -303,7 +304,7 @@ if __name__ == '__main__':
       flow_vels = Flow_Velocity_Calculation(vehicleList,buildingListOut)
       for i,elt in enumerate(vehicleList):
         vspeed=(flow_vels[i]/np.linalg.norm(flow_vels[i]))
-        elt.position = elt.position + vspeed * 0.5
+        elt.position = elt.position + vspeed * 0.1
         tracks[elt.ID].append(elt.position)
 
     time_slider.set_val(0)
