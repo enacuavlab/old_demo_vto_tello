@@ -11,10 +11,9 @@ telloFreq = 10
 #------------------------------------------------------------------------------
 class Thread_mission(threading.Thread):
 
-  def __init__(self,gs0,fig,quitflag,rigidBodyDict,targetId):
+  def __init__(self,drawing,quitflag,rigidBodyDict,targetId):
     threading.Thread.__init__(self)
-    self.gs0 = gs0
-    self.fig = fig
+    self.drawing = drawing
     self.quitflag = quitflag
     self.rigidBodyDict = rigidBodyDict
     self.targetId = targetId
@@ -35,10 +34,7 @@ class Thread_mission(threading.Thread):
           else: continue
         else: unvalidcpt= 0
         position = self.rigidBodyDict[65].position
-        self.gs0.plot(position[0],position[1],color='green',marker='o',markersize=12)
-        self.fig.canvas.draw_idle()
-
-        print(position)
+        self.drawing.refresh(position[0],position[1])
 
     finally: 
       print("Thread_mission stop")

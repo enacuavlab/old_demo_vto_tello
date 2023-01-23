@@ -5,19 +5,15 @@ from mission import Thread_mission
 from command import Thread_command
 from vehicle import Vehicle
 from netdrone import initNetDrone
+from drawing import Drawing
 
 import argparse
 import time
 
-import matplotlib.pyplot as plt
-
 import threading,queue
-from matplotlib.animation import FuncAnimation
 import numpy as np
 
 #------------------------------------------------------------------------------
-#tellos_selected = (65,)
-
 acTarg = [888,'Helmet']
 
 optiFreq = 20 # Check that optitrack stream at least with this value
@@ -39,69 +35,57 @@ def getData(flag,com):
     time.sleep(1)
 
 
-def displayData(flag,com,fig,gs0):
+def displayData(flag,com,drawing):
   while not flag:
     if not com.empty():
       (x,y) = com.get()
       print(x, y)
-      gs0.plot(x,y,color='green',marker='o',markersize=12)
-      fig.canvas.draw_idle()
+      drawing.refresh(x,y)
 
 
 #------------------------------------------------------------------------------
-def main(droneAddrs):
+def main(droneReal,droneSim):
 
-#  vehicleList = [];
-#  rigidBodyDict = {};
-#  rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
-#  for ac in droneAddrs:
-#    vehicleList.append(Vehicle(ac))
-#    rigidBodyDict[ac]=Rigidbody(ac)
-#
+  vehicleListReal = []
+  rigidBodyDict = {}
+  rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
+  for ac in droneReal:
+    vehicleListReal.append(Vehicle(ac))
+    rigidBodyDict[ac]=Rigidbody(ac)
+
+  vehicleListSim = []
+  for ac in droneSim:
+    vehicleListSim.append(Vehicle(ac))
+
   flag = Flag()
-#
-#  threadMotion = Thread_natnet(flag,rigidBodyDict,optiFreq)
-#  threadMotion.start()
-#
+
+  if vehicleListReal:
+    try:
+      threadMotion = Thread_natnet(flag,rigidBodyDict,optiFreq)
+      threadMotion.start()
+    except ValueError as msg:
+      print(msg)
+      exit()
+
   commands = queue.Queue()
+
+  drawing = Drawing()
+
+  threadMission = Thread_mission(drawing,flag,rigidBodyDict,acTarg[0])
+  threadMission.start()
+
+  threadCommand = Thread_command(flag,commands)
+  threadCommand.start()
+
+
+#  proc1 = threading.Thread(target=getData,args=(flag,commands,))
+#  proc1.start()
 #
-  fig, gs0 = plt.subplots()
-  gs0.clear()
-  fig.subplots_adjust(left=0.25, bottom=0.25)
-  gs0.set_xlabel('Time [s]')
-  gs0.set_xlim(-5, 5)
-  gs0.set_ylim(-5, 5)
-  gs0.grid()
-
-  gs0.plot(1.3,1.6,color='green',marker='o',markersize=12)
-
-#  threadMission = Thread_mission(gs0,fig,flag,rigidBodyDict,acTarg[0])
-#  threadMission.start()
-#
-#  threadCommand = Thread_command(flag,commands)
-#  threadCommand.start()
-
-#  try:
-#    plt.show()
-
-#  except KeyboardInterrupt:
-#    flag.set()
-
-#  finally:
-#    flag.set()
-#    threadMission.join()
-#    threadMotion.join()
-#    threadCommand.join()
-
-
-  proc1 = threading.Thread(target=getData,args=(flag,commands,))
-  proc1.start()
-
-  proc2 = threading.Thread(target=displayData,args=(flag,commands,fig,gs0))
-  proc2.start()
+#  proc2 = threading.Thread(target=displayData,args=(flag,commands,drawing))
+#  proc2.start()
 
   try:
-    plt.show()
+    drawing.start()
 
   except KeyboardInterrupt:
     print("KeyboardInterrupt")
@@ -110,20 +94,31 @@ def main(droneAddrs):
   finally:
     print("finally")
     flag.set()
-    proc1.join()
-    proc2.join()
+#    proc1.join()
+#    proc2.join()
+    if vehicleListReal: threadMotion.join()
+    threadMission.join()
+    threadCommand.join()
 
 
 
 #------------------------------------------------------------------------------
 if __name__=="__main__":
   parser = argparse.ArgumentParser()
-  parser.add_argument('--ac', nargs='+', type=int)
+  parser.add_argument('--ar', nargs='+', dest='realacs', type=int)
+  parser.add_argument('--as', nargs='+', dest='simuacs', type=int)
   args = parser.parse_args()
 
-  main([])
-#  for _, selected in parser.parse_args()._get_kwargs():
-#    if selected is not None:
-#      ret,droneAddrs = initNetDrone(selected)
-#      if ret:
-#        main(droneAddrs)
+  ret=True
+  droneReal = {}
+  droneSim = {}
+  if args.realacs is not None:
+    ret = False
+    ret,droneAddrs = initNetDrone(args.realacs)
+    if ret: droneReal = droneAddrs
+
+  if args.simuacs is not None:
+    for elt in args.simuacs: droneSim[elt]=elt
+
+  if ret:
+    main(droneReal,droneSim)

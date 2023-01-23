@@ -6,6 +6,7 @@ import socket
 import select
 import threading
 import time
+import subprocess
 
 from collections import deque
 
@@ -36,6 +37,8 @@ Vector3 = struct.Struct( '<fff' )
 Quaternion = struct.Struct( '<ffff' )
 FloatValue = struct.Struct( '<f' )
 
+Optitrack = '192.168.1.231'
+
 #------------------------------------------------------------------------------
 class Rigidbody():
 
@@ -52,6 +55,11 @@ class Thread_natnet(threading.Thread):
 
   def __init__(self,quitflag,rigidBodyDict,freq=int(20),vel_samples=int(4)):
     threading.Thread.__init__(self)
+
+    p = subprocess.Popen(["ping", "-q", "-c", "1", Optitrack], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if p.wait() != 0:
+      raise ValueError('Optitrack not in this network')
+
     self.quitflag = quitflag
     self.rigidBodyDict = rigidBodyDict
     self.period = 1.0 / freq
@@ -67,6 +75,7 @@ class Thread_natnet(threading.Thread):
     except socket.error as msg:
       print("ERROR: data socket error occurred:\n%s" %msg)
       print("  Check Motive/Server mode requested mode agreement.  You requested Multicast ")
+
 
 
   def run(self):
