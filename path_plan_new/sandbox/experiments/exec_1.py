@@ -7,11 +7,13 @@ from vehicle import Vehicle
 from netdrone import initNetDrone
 
 import argparse
-import queue
 import time
-import threading
 
 import matplotlib.pyplot as plt
+
+import threading,queue
+from matplotlib.animation import FuncAnimation
+import numpy as np
 
 #------------------------------------------------------------------------------
 #tellos_selected = (65,)
@@ -26,22 +28,43 @@ class Flag(threading.Event):
     return self.is_set()
 
 #------------------------------------------------------------------------------
+def getData(flag,com):
+  xval = 0.0
+  yval = 0.0
+  while not flag:
+    xval = xval + np.random.random()/10.0
+    yval = yval + np.random.random()/10.0
+    com.put([xval,yval])
+  #  print(xval,yval)
+    time.sleep(1)
+
+
+def displayData(flag,com,fig,gs0):
+  while not flag:
+    if not com.empty():
+      (x,y) = com.get()
+      print(x, y)
+      gs0.plot(x,y,color='green',marker='o',markersize=12)
+      fig.canvas.draw_idle()
+
+
+#------------------------------------------------------------------------------
 def main(droneAddrs):
 
-  vehicleList = [];
-  rigidBodyDict = {};
-  rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
-  for ac in droneAddrs:
-    vehicleList.append(Vehicle(ac))
-    rigidBodyDict[ac]=Rigidbody(ac)
-
+#  vehicleList = [];
+#  rigidBodyDict = {};
+#  rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
+#  for ac in droneAddrs:
+#    vehicleList.append(Vehicle(ac))
+#    rigidBodyDict[ac]=Rigidbody(ac)
+#
   flag = Flag()
-
-  threadMotion = Thread_natnet(flag,rigidBodyDict,optiFreq)
-  threadMotion.start()
-
+#
+#  threadMotion = Thread_natnet(flag,rigidBodyDict,optiFreq)
+#  threadMotion.start()
+#
   commands = queue.Queue()
-
+#
   fig, gs0 = plt.subplots()
   gs0.clear()
   fig.subplots_adjust(left=0.25, bottom=0.25)
@@ -50,23 +73,46 @@ def main(droneAddrs):
   gs0.set_ylim(-5, 5)
   gs0.grid()
 
-  threadMission = Thread_mission(gs0,fig,flag,rigidBodyDict,acTarg[0])
-  threadMission.start()
+  gs0.plot(1.3,1.6,color='green',marker='o',markersize=12)
 
-  threadCommand = Thread_command(flag,commands)
-  threadCommand.start()
+#  threadMission = Thread_mission(gs0,fig,flag,rigidBodyDict,acTarg[0])
+#  threadMission.start()
+#
+#  threadCommand = Thread_command(flag,commands)
+#  threadCommand.start()
+
+#  try:
+#    plt.show()
+
+#  except KeyboardInterrupt:
+#    flag.set()
+
+#  finally:
+#    flag.set()
+#    threadMission.join()
+#    threadMotion.join()
+#    threadCommand.join()
+
+
+  proc1 = threading.Thread(target=getData,args=(flag,commands,))
+  proc1.start()
+
+  proc2 = threading.Thread(target=displayData,args=(flag,commands,fig,gs0))
+  proc2.start()
 
   try:
     plt.show()
 
   except KeyboardInterrupt:
+    print("KeyboardInterrupt")
     flag.set()
 
   finally:
+    print("finally")
     flag.set()
-    threadMission.join()
-    threadMotion.join()
-    threadCommand.join()
+    proc1.join()
+    proc2.join()
+
 
 
 #------------------------------------------------------------------------------
@@ -75,8 +121,9 @@ if __name__=="__main__":
   parser.add_argument('--ac', nargs='+', type=int)
   args = parser.parse_args()
 
-  for _, selected in parser.parse_args()._get_kwargs():
-    if selected is not None:
-      ret,droneAddrs = initNetDrone(selected)
-      if ret:
-        main(droneAddrs)
+  main([])
+#  for _, selected in parser.parse_args()._get_kwargs():
+#    if selected is not None:
+#      ret,droneAddrs = initNetDrone(selected)
+#      if ret:
+#        main(droneAddrs)
