@@ -101,13 +101,19 @@ def main(droneReal,droneSim):
     threadCommand.join()
 
 
+#------------------------------------------------------------------------------
+def toString(param):
+  return((param[0],param[1]))
 
 #------------------------------------------------------------------------------
 if __name__=="__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('--ar', nargs='+', dest='realacs', type=int)
   parser.add_argument('--as', nargs='+', dest='simuacs', type=int)
+  parser.add_argument('--v0', nargs='+', dest='toto', type=toString)
   args = parser.parse_args()
+
+  print(args.toto)
 
   ret=True
   droneReal = {}
