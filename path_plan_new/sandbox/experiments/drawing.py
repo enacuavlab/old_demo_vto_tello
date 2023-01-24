@@ -17,8 +17,11 @@ class Drawing():
     self.gs0.plot(1.3,1.6,color='green',marker='o',markersize=12)
 
 
-  def refresh(self,x,y):
-    self.gs0.plot(x,y,color='green',marker='o',markersize=12)
+  def refresh(self,updatedlst):
+    for elt in updatedlst:
+      print(elt)
+#    self.gs0.plot(x,y,color='green',marker='o',markersize=12)
+#    self.fig.clear()
     self.fig.canvas.draw_idle()
 
 

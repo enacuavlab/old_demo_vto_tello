@@ -11,7 +11,7 @@ telloFreq = 10
 #------------------------------------------------------------------------------
 class Thread_mission(threading.Thread):
 
-  def __init__(self,drawing,quitflag,rigidBodyDict,targetId):
+  def __init__(self,quitflag,drawing,rigidBodyDict,targetId):
     threading.Thread.__init__(self)
     self.drawing = drawing
     self.quitflag = quitflag
