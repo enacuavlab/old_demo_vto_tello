@@ -18,7 +18,7 @@ class Thread_drawreal(threading.Thread):
   def run(self):
     try: 
       while not self.quitflag:
-        time.sleep(.05)
+        time.sleep(.1)
         self.drawing.refreshdic(self.realdic)
 
     finally: 

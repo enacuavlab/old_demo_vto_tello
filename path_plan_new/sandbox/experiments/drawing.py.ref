@@ -1,23 +1,14 @@
 #!/usr/bin/python3
 
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-
-        background = fig.canvas.copy_from_bbox(ax.bbox)
-                    fig.canvas.restore_region(background)
-                                ax.draw_artist(points)
-            fig.canvas.blit(ax.bbox)
-            fig.canvas.draw()
 
 #--------------------------------------------------------------------------------
 class Drawing():
   def __init__(self):
 
     self.fig, self.gs0 = plt.subplots()
+    self.gs0.clear()
     self.fig.subplots_adjust(left=0.25, bottom=0.25)
-    self.anim = FuncAnimation(fig, ud, frames=100, interval=100, blit=True)
-
-
     self.gs0.set_xlabel('Time [s]')
     self.gs0.set_xlim(-5, 5)
     self.gs0.set_ylim(-5, 5)
