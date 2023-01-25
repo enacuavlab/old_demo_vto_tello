@@ -3,6 +3,7 @@
 from natnet4 import Rigidbody,Thread_natnet
 from mission import Thread_mission
 from command import Thread_commandReal
+from drawreal import Thread_drawreal
 from simulation import Thread_commandSim
 from vehicle import Vehicle
 from netdrone import initNetDrone
@@ -41,8 +42,11 @@ def main(droneReal,droneSim):
     rigidBodyDict[ac]=Rigidbody(ac)
 
   vehicleListSim = []
-  for ac in droneSim:
-    vehicleListSim.append(Vehicle(ac))
+  for i,elt in droneSim.items():
+    vel = Vehicle(i)
+    vel.position = elt
+    vehicleListSim.append(vel)
+
 
   flag = Flag()
 
@@ -63,6 +67,9 @@ def main(droneReal,droneSim):
   
     threadCmdReal = Thread_commandReal(flag,drawing,commands)
     threadCmdReal.start()
+
+    threadDrawReal = Thread_drawreal(flag,drawing,rigidBodyDict)
+    threadDrawReal.start()
 
   if vehicleListSim:
     threadCmdSim = Thread_commandSim(flag,drawing,vehicleListSim)
@@ -85,6 +92,7 @@ def main(droneReal,droneSim):
       threadMotion.join()
       threadMission.join()
       threadCmdReal.join()
+      threadDrawReal.join()
 
 
 #------------------------------------------------------------------------------

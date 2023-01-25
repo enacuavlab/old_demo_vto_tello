@@ -14,12 +14,17 @@ class Drawing():
     self.gs0.set_ylim(-5, 5)
     self.gs0.grid()
   
-    self.gs0.plot(1.3,1.6,color='green',marker='o',markersize=12)
+  def refreshlst(self,lst):
+    for elt in lst:
+      self.gs0.plot(elt.position[0],elt.position[1],color='green',marker='o',markersize=12)
+      print((elt.ID,elt.position))
+    self.fig.canvas.draw_idle()
 
-
-  def refresh(self,updatedlst):
-    for elt in updatedlst:
-      print(elt)
+  def refreshdic(self,dic):
+    for i,elt in dic.items():
+      if i != 888:
+        self.gs0.plot(elt.position[0],elt.position[1],color='green',marker='o',markersize=12)
+        print(i,elt.position)
 #    self.gs0.plot(x,y,color='green',marker='o',markersize=12)
 #    self.fig.clear()
     self.fig.canvas.draw_idle()

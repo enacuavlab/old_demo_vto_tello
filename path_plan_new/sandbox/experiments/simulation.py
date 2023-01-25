@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import numpy as np
+
 import threading
 import queue
 import time
@@ -15,13 +17,13 @@ class Thread_commandSim(threading.Thread):
     self.drawing = drawing
 
   def run(self):
-    updatedlst = simlst
     try: 
       while not self.quitflag:
         time.sleep(1)
-        for elt in updatedlst:
+        vspeed = np.zeros(3)
+        for elt in self.simlst:
           elt.position = elt.position + vspeed * 0.1
-        self.drawing.refresh(updatedlst)
+        self.drawing.refreshlst(self.simlst)
 
     finally: 
       print("Thread_commandSim stop")
