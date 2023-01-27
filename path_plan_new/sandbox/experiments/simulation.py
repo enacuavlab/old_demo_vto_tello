@@ -19,9 +19,10 @@ class Thread_commandSim(threading.Thread):
     try: 
       while not self.quitflag:
         time.sleep(1)
-        vspeed = np.zeros(3)
+        #vspeed = np.zeros(3)
+        speed = [0.1,0.2,0.0]
         for elt in self.simlst:
-          elt.position = elt.position + vspeed * 0.1
+          elt.position = np.add(elt.position,speed)
 
     finally: 
       print("Thread_commandSim stop")

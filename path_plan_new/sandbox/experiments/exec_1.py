@@ -49,8 +49,6 @@ def main(droneReal,droneSim):
 
   flag = Flag()
 
-  drawing = Drawing(vehicleListSim)
-
   if vehicleListReal:
     try:
       threadMotion = Thread_natnet(flag,rigidBodyDict,optiFreq)
@@ -73,7 +71,7 @@ def main(droneReal,droneSim):
       
 
   try:
-    drawing.start()
+    Drawing(vehicleListSim,rigidBodyDict).start()
 
   except KeyboardInterrupt:
     print("KeyboardInterrupt")
