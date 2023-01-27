@@ -8,10 +8,9 @@ import threading
 #------------------------------------------------------------------------------
 class Thread_commandReal(threading.Thread):
 
-  def __init__(self,quitflag,drawing,commands):
+  def __init__(self,quitflag,commands):
     threading.Thread.__init__(self)
     self.quitflag = quitflag
-    self.drawing = drawing
     self.commands = commands
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 

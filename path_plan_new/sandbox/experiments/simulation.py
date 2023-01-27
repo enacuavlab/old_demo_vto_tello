@@ -10,11 +10,10 @@ import time
 #------------------------------------------------------------------------------
 class Thread_commandSim(threading.Thread):
 
-  def __init__(self,quitflag,drawing,simlst):
+  def __init__(self,quitflag,simlst):
     threading.Thread.__init__(self)
     self.quitflag = quitflag
     self.simlst = simlst
-    self.drawing = drawing
 
   def run(self):
     try: 
@@ -23,7 +22,6 @@ class Thread_commandSim(threading.Thread):
         vspeed = np.zeros(3)
         for elt in self.simlst:
           elt.position = elt.position + vspeed * 0.1
-        self.drawing.refreshlst(self.simlst)
 
     finally: 
       print("Thread_commandSim stop")

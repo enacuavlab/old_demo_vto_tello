@@ -1,43 +1,33 @@
 #!/usr/bin/python3
 
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+import matplotlib.animation as animation
 
-        background = fig.canvas.copy_from_bbox(ax.bbox)
-                    fig.canvas.restore_region(background)
-                                ax.draw_artist(points)
-            fig.canvas.blit(ax.bbox)
-            fig.canvas.draw()
 
 #--------------------------------------------------------------------------------
 class Drawing():
-  def __init__(self):
+  def __init__(self,vehiclelst):
 
-    self.fig, self.gs0 = plt.subplots()
+    self.vehiclelst = vehiclelst
+    self.fig, self.ax = plt.subplots()
     self.fig.subplots_adjust(left=0.25, bottom=0.25)
-    self.anim = FuncAnimation(fig, ud, frames=100, interval=100, blit=True)
+    self.ax.set_xlabel('Time [s]')
+    self.ax = plt.axes(xlim=(-5,5),ylim=(-5,5))
+    self.ax.grid()
 
 
-    self.gs0.set_xlabel('Time [s]')
-    self.gs0.set_xlim(-5, 5)
-    self.gs0.set_ylim(-5, 5)
-    self.gs0.grid()
+  def update(self,i,scat):
   
-  def refreshlst(self,lst):
-    for elt in lst:
-      self.gs0.plot(elt.position[0],elt.position[1],color='green',marker='o',markersize=12)
-      print((elt.ID,elt.position))
-    self.fig.canvas.draw_idle()
-
-  def refreshdic(self,dic):
-    for i,elt in dic.items():
-      if i != 888:
-        self.gs0.plot(elt.position[0],elt.position[1],color='green',marker='o',markersize=12)
-        print(i,elt.position)
-#    self.gs0.plot(x,y,color='green',marker='o',markersize=12)
-#    self.fig.clear()
-    self.fig.canvas.draw_idle()
+    data = np.array([[self.vehiclelst[0].position[0],self.vehiclelst[0].position[1],0,0]])
+    for i,elt in enumerate(self.vehiclelst, start=1): data = np.append(data,np.array([[elt.position[0],elt.position[1],0,0]]),axis=0)
+  
+    scat.set_offsets(data[:, :2])                     # x and y
+    scat.set_sizes(300 * abs(data[:, 2])**1.5 + 100)  # size
+    scat.set_array(data[:, 3])                        # color
+  
+    return scat,
 
 
   def start(self):
+    ani = animation.FuncAnimation(self.fig,self.update,fargs=(self.ax.scatter([],[])),interval=1,blit=True)
     plt.show()
