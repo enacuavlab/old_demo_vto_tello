@@ -18,11 +18,17 @@ class Drawing():
     self.ax.grid()
     self.scat = self.ax.scatter([],[])
 
+    self.annotations = {}
+
+    for elt in vehiclelstsim: self.annotations[elt.ID]=self.ax.annotate(elt.ID, xy=(0,0))
+    for elt in self.rigidBodyDict: self.annotations[elt]=self.ax.annotate(elt, xy=(0,0))
+
 
   def update(self,i):
     if self.vehiclelstsim : 
-      data = np.array([[self.vehiclelstsim[0].position[0],self.vehiclelstsim[0].position[1],0,0]])
-      for i,elt in enumerate(self.vehiclelstsim, start=1): data = np.append(data,np.array([[elt.position[0],elt.position[1],0,0]]),axis=0)
+      data = np.array([[self.vehiclelstsim[0].position[0],self.vehiclelstsim[0].position[1],0,50]])
+      for i,elt in enumerate(self.vehiclelstsim, start=1): 
+        data = np.append(data,np.array([[elt.position[0],elt.position[1],0,70]]),axis=0)
     if self.rigidBodyDict : 
       if not self.vehiclelstsim: 
         first = next(iter(self.rigidBodyDict))
@@ -33,10 +39,15 @@ class Drawing():
         elt = self.rigidBodyDict[k]
         data = np.append(data,np.array([[elt.position[0],elt.position[1],0,0]]),axis=0)
 
-    self.scat.set_offsets(data[:, :2])                     # x and y
-    self.scat.set_sizes(300 * abs(data[:, 2])**1.5 + 100)  # size
+#    self.scat.set_offsets(data[:, :2])                     # x and y
+    self.scat.set_offsets(data[1:, :2])                     # x and y
+    self.scat.set_sizes(300 * abs(data[1:, 2])**1.5 + 100)  # size
     self.scat.set_array(data[:, 3])                        # color
-    return self.scat,
+
+    for elt in self.vehiclelstsim: self.annotations[elt.ID].set_position((elt.position[0],elt.position[1]))
+    for elt in self.rigidBodyDict: self.annotations[elt].set_position((self.rigidBodyDict[elt].position[0],self.rigidBodyDict[elt].position[1]))
+
+    return self.scat,self.annotations[45],self.annotations[888],
 
 
   def start(self):
