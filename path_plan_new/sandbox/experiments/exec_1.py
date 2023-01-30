@@ -25,6 +25,8 @@ acTarg = [888,'Helmet']
 
 optiFreq = 20 # Check that optitrack stream at least with this value
 
+FPS = 30
+
 #------------------------------------------------------------------------------
 class Flag(threading.Event):
   def __bool__(self):
@@ -71,7 +73,7 @@ def main(droneReal,droneSim):
       
 
   try:
-    Drawing(vehicleListSim,rigidBodyDict).start()
+    Drawing(FPS,vehicleListSim,rigidBodyDict).start()
 
   except KeyboardInterrupt:
     print("KeyboardInterrupt")
