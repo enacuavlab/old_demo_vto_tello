@@ -6,7 +6,7 @@ import matplotlib.animation as animation
 
 
 #--------------------------------------------------------------------------------
-class Drawing():
+class Drawing2D():
 
   def get_listpos(self,arg):
     ret = [0,0]
@@ -30,19 +30,20 @@ class Drawing():
     self.ax.set_xlabel('Time [s]')
     self.ax = plt.axes(xlim=(-5,5),ylim=(-5,5))
     self.ax.grid()
-    self.scat = self.ax.scatter([],[])
+
+    self.scat = self.ax.scatter([],[],marker='o',linestyle='None',s=400,edgecolor='black',facecolors='none',linewidths=1.2,)
 
     self.artiststodraw = [self.scat]
     self.annotations = {}
     self.plots = {}
     for elt in vehiclelstsim: 
-      self.annotations[elt.ID]=self.ax.annotate(elt.ID, xy=(0,0))
+      self.annotations[elt.ID]=self.ax.annotate(elt.ID, xy=(0,0),va='center',ha='center')
       self.artiststodraw.append(self.annotations[elt.ID])
-      self.plots[elt.ID]=self.get_listpos
+      self.plots[elt.ID]=(self.get_listpos,40)
     for elt in rigidBodyDict: 
-      self.annotations[elt]=self.ax.annotate(elt, xy=(0,0))
+      self.annotations[elt]=self.ax.annotate(elt, xy=(0,0),va='center',ha='center')
       self.artiststodraw.append(self.annotations[elt])
-      self.plots[elt]=self.get_dicpos
+      self.plots[elt]=(self.get_dicpos,60)
 
 
   def update(self,i):
@@ -50,13 +51,12 @@ class Drawing():
     data = np.array([[0,0,0,0]])
 
     for elt in self.plots:
-      position = self.plots[elt](elt) # call register get function 
-      data = np.append(data,np.array([[position[0],position[1],0,0]]),axis=0)
+      position=self.plots[elt][0](elt) # call register get function 
+      data = np.append(data,np.array([[position[0],position[1],100,self.plots[elt][1]]]),axis=0)
       self.annotations[elt].set_position((position[0],position[1]))
 
     self.scat.set_offsets(data[:, :2])                     # x and y
-    self.scat.set_offsets(data[1:, :2])                     # x and y
-    self.scat.set_sizes(300 * abs(data[1:, 2])**1.5 + 100)  # size
+#    self.scat.set_sizes(300 * abs(data[1:, 2])**1.5 + 100)  # size
     self.scat.set_array(data[:, 3])                        # color
 
     return (self.artiststodraw)

@@ -6,7 +6,8 @@ from command import Thread_commandReal
 from simulation import Thread_commandSim
 from vehicle import Vehicle
 from netdrone import initNetDrone
-from drawing import Drawing
+from drawing3D import Drawing3D
+#from drawing2D import Drawing2D
 
 import argparse
 import time
@@ -48,7 +49,6 @@ def main(droneReal,droneSim):
     vel.position = elt
     vehicleListSim.append(vel)
 
-
   flag = Flag()
 
   if vehicleListReal:
@@ -73,7 +73,7 @@ def main(droneReal,droneSim):
       
 
   try:
-    Drawing(FPS,vehicleListSim,rigidBodyDict).start()
+    Drawing3D(FPS,vehicleListSim,rigidBodyDict).start()
 
   except KeyboardInterrupt:
     print("KeyboardInterrupt")
