@@ -6,7 +6,8 @@ from command import Thread_commandReal
 from simulation import Thread_commandSim
 from vehicle import Vehicle
 from netdrone import initNetDrone
-from drawing3D import Drawing3D
+from drawingGL import DrawingGL
+#from drawing3D import Drawing3D
 #from drawing2D import Drawing2D
 
 import argparse
@@ -73,7 +74,7 @@ def main(droneReal,droneSim):
       
 
   try:
-    Drawing3D(FPS,vehicleListSim,rigidBodyDict).start()
+    DrawingGL(FPS,vehicleListSim,rigidBodyDict).start()
 
   except KeyboardInterrupt:
     print("KeyboardInterrupt")
