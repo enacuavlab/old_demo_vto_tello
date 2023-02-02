@@ -7,7 +7,7 @@ import time,psutil,sys
 import numpy as np
 
 
-from PyQt5 import QtCore,QtWidgets
+from PyQt5 import QtCore,QtGui,QtWidgets
 import pyqtgraph.opengl as gl
 import pyqtgraph as pg
 
@@ -35,26 +35,33 @@ class DrawingGL():
 
     self.app = QtWidgets.QApplication(sys.argv)
     self.w = gl.GLViewWidget()
-    self.w.opts['distance'] = 30
+    self.w.opts['distance'] = 20
     self.w.setWindowTitle('ENAC VTO')
-#    self.w.setGeometry(0, 110, 1920, 1080)
-    self.w.addItem(gl.GLGridItem())
+
+    self.w.addItem(gl.GLGridItem(size=QtGui.QVector3D(10,10,10)))
 
     self.w.show()
 
     self.store_cpu = (0.0,0.0)
     self.avg_cpu = 0.0
     self.store_time = time.time()
+    self.fps_text = gl.GLTextItem(pos=(0,-30,0))
+    self.w.addItem(self.fps_text)
+
 
     self.plots = {}
     i = 0
     color = np.empty((self.vehicleNb,4))
     for elt in vehiclelstsim: 
-      self.plots[elt.ID]=(self.get_listpos)
+      lab = gl.GLTextItem(text=str(elt.ID))
+      self.w.addItem(lab)
+      self.plots[elt.ID]=(self.get_listpos,lab)
       color[i] =  (1.0, 0.0, 0.0, 0.5)
       i = i+1
     for elt in rigidBodyDict: 
-      self.plots[elt]=(self.get_dicpos)
+      lab = gl.GLTextItem(text=str(elt))
+      self.w.addItem(lab)
+      self.plots[elt]=(self.get_dicpos,lab)
       color[i] = (0.0, 1.0, 0.0, 0.5)
       i = i+1
 
@@ -73,11 +80,13 @@ class DrawingGL():
       self.avg_cpu =  self.store_cpu[1]/10
       self.store_cpu = (0.0,0.0)
     
-    print("FPS "+f'{fps:.2f}'+"             CPU "+f'{self.avg_cpu:.2f}')
+    self.fps_text.setData(text=("FPS "+f'{fps:.2f}'+"             CPU "+f'{self.avg_cpu:.2f}'))
 
     dummy = np.empty((self.vehicleNb, 3))
     for i,elt in enumerate(self.plots):
-      dummy[i]=self.plots[elt](elt) # call register get function 
+      dummy[i]=self.plots[elt][0](elt) # call register get function 
+      self.plots[elt][1].setData(pos=dummy[i])
+
 
     self.sp.setData(pos=dummy)
 
