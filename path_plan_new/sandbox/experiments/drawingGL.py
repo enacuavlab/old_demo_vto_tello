@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+"""
+sudo pip3 install pyqtgraph
+"""
 import time,psutil,sys
 import numpy as np
 
@@ -28,27 +31,36 @@ class DrawingGL():
     self.FPS = FPS
     self.vehiclelstsim= vehiclelstsim
     self.rigidBodyDict= rigidBodyDict
+    self.vehicleNb = len(vehiclelstsim)+len(rigidBodyDict)
 
     self.app = QtWidgets.QApplication(sys.argv)
     self.w = gl.GLViewWidget()
-    self.w.opts['distance'] = 40
-    self.w.setWindowTitle('pyqtgraph example: GLLinePlotItem')
-    self.w.setGeometry(0, 110, 1920, 1080)
+    self.w.opts['distance'] = 30
+    self.w.setWindowTitle('ENAC VTO')
+#    self.w.setGeometry(0, 110, 1920, 1080)
+    self.w.addItem(gl.GLGridItem())
+
     self.w.show()
 
     self.store_cpu = (0.0,0.0)
     self.avg_cpu = 0.0
     self.store_time = time.time()
 
-    self.storepos = {}
     self.plots = {}
+    i = 0
+    color = np.empty((self.vehicleNb,4))
     for elt in vehiclelstsim: 
-      self.storepos[elt.ID] = np.zeros(3)
-      self.plots[elt.ID]=(self.get_listpos,gl.GLScatterPlotItem(color=([1.0, 1.0, 1.0, 0.5]),size=3))
-
+      self.plots[elt.ID]=(self.get_listpos)
+      color[i] =  (1.0, 0.0, 0.0, 0.5)
+      i = i+1
     for elt in rigidBodyDict: 
-      self.storepos[elt] = np.zeros(3)
-      self.plots[elt]=(self.get_dicpos,gl.GLScatterPlotItem(color=([1.0, 1.0, 1.0, 0.5]),size=10))
+      self.plots[elt]=(self.get_dicpos)
+      color[i] = (0.0, 1.0, 0.0, 0.5)
+      i = i+1
+
+    self.sp = gl.GLScatterPlotItem(size=0.5,color=color,pxMode=False)
+    self.w.addItem(self.sp)
+
 
   def update(self):
 
@@ -63,17 +75,11 @@ class DrawingGL():
     
     print("FPS "+f'{fps:.2f}'+"             CPU "+f'{self.avg_cpu:.2f}')
 
-    for elt in self.plots:
-      curr=self.plots[elt][0](elt) # call register get function 
-      prev=self.storepos[elt]
+    dummy = np.empty((self.vehicleNb, 3))
+    for i,elt in enumerate(self.plots):
+      dummy[i]=self.plots[elt](elt) # call register get function 
 
-      pos = [[curr[0],prev[0]],[curr[1],prev[1]],[curr[2],prev[2]]]
-     
-     
-      pos2 = [[9.95995996,9.18367347,-0.06932245][9.97997998,9.18367347,-0.05015246][10.,9.18367347,-0.0305197]]
-      print(posi2)
-
-      self.plots[elt][1].setData(pos=pos)
+    self.sp.setData(pos=dummy)
 
 
   def start(self):
