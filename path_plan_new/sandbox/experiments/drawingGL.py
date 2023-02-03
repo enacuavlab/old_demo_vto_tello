@@ -52,6 +52,8 @@ class DrawingGL():
 
     glvw = gl.GLViewWidget()
     glvw.opts['distance'] = 20
+    glvw.opts['elevation'] = 40
+    glvw.opts['azimuth'] = 90
 
     self.plots = {}
     i = 0
