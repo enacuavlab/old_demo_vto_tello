@@ -35,8 +35,7 @@ class DrawingGL():
 
     self.app = QtWidgets.QApplication(sys.argv)
     self.w = pg.GraphicsLayoutWidget()
-    self.layout = QtWidgets.QGridLayout()
-    self.w.setLayout(self.layout)
+    self.layout = QtWidgets.QGridLayout(self.w)
     self.w.setWindowTitle('ENAC VTO')
     self.w.show()
 
@@ -46,8 +45,8 @@ class DrawingGL():
 
     self.fps_text = QtWidgets.QLabel("TEXT")
     self.fps_text.setStyleSheet("QLabel{font-size: 40pt; color:rgba(226, 39, 134, 127)}")
-    self.fps_text.sizeHint = lambda: pg.QtCore.QSize(100, 100)
-    self.layout.addWidget(self.fps_text)
+#    self.fps_text.sizeHint = lambda: pg.QtCore.QSize(100, 100)
+    self.layout.addWidget(self.fps_text,0,0,1,2)
 
 
     glvw = gl.GLViewWidget()
@@ -74,8 +73,8 @@ class DrawingGL():
     self.sp = gl.GLScatterPlotItem(size=0.5,color=color,pxMode=False)
     glvw.addItem(self.sp)
     glvw.addItem(gl.GLGridItem(size=QtGui.QVector3D(10,10,10)))
-    self.layout.addWidget(glvw)
-    glvw.sizeHint = lambda: pg.QtCore.QSize(100, 500)
+    self.layout.addWidget(glvw,1,0,1,2)
+#    glvw.sizeHint = lambda: pg.QtCore.QSize(100, 500)
 
 
 
