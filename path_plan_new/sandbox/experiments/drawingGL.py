@@ -34,39 +34,47 @@ class DrawingGL():
     self.vehicleNb = len(vehiclelstsim)+len(rigidBodyDict)
 
     self.app = QtWidgets.QApplication(sys.argv)
-    self.w = gl.GLViewWidget()
-    self.w.opts['distance'] = 20
+    self.w = pg.GraphicsLayoutWidget()
+    self.layout = QtWidgets.QGridLayout()
+    self.w.setLayout(self.layout)
     self.w.setWindowTitle('ENAC VTO')
-
-    self.w.addItem(gl.GLGridItem(size=QtGui.QVector3D(10,10,10)))
-
     self.w.show()
 
     self.store_cpu = (0.0,0.0)
     self.avg_cpu = 0.0
     self.store_time = time.time()
-    self.fps_text = gl.GLTextItem(pos=(0,-30,0))
-    self.w.addItem(self.fps_text)
 
+    self.fps_text = QtWidgets.QLabel("TEXT")
+    self.fps_text.setStyleSheet("QLabel{font-size: 40pt; color:rgba(226, 39, 134, 127)}")
+    self.fps_text.sizeHint = lambda: pg.QtCore.QSize(100, 100)
+    self.layout.addWidget(self.fps_text)
+
+
+    glvw = gl.GLViewWidget()
+    glvw.opts['distance'] = 20
 
     self.plots = {}
     i = 0
     color = np.empty((self.vehicleNb,4))
     for elt in vehiclelstsim: 
       lab = gl.GLTextItem(text=str(elt.ID))
-      self.w.addItem(lab)
+      glvw.addItem(lab)
       self.plots[elt.ID]=(self.get_listpos,lab)
       color[i] =  (1.0, 0.0, 0.0, 0.5)
       i = i+1
     for elt in rigidBodyDict: 
       lab = gl.GLTextItem(text=str(elt))
-      self.w.addItem(lab)
+      glvw.addItem(lab)
       self.plots[elt]=(self.get_dicpos,lab)
       color[i] = (0.0, 1.0, 0.0, 0.5)
       i = i+1
 
     self.sp = gl.GLScatterPlotItem(size=0.5,color=color,pxMode=False)
-    self.w.addItem(self.sp)
+    glvw.addItem(self.sp)
+    glvw.addItem(gl.GLGridItem(size=QtGui.QVector3D(10,10,10)))
+    self.layout.addWidget(glvw)
+    glvw.sizeHint = lambda: pg.QtCore.QSize(100, 500)
+
 
 
   def update(self):
@@ -79,14 +87,12 @@ class DrawingGL():
     if self.store_cpu[0] == 10:
       self.avg_cpu =  self.store_cpu[1]/10
       self.store_cpu = (0.0,0.0)
-    
-    self.fps_text.setData(text=("FPS "+f'{fps:.2f}'+"             CPU "+f'{self.avg_cpu:.2f}'))
+      self.fps_text.setText("FPS "+f'{fps:.2f}'+"             CPU "+f'{self.avg_cpu:.2f}')
 
     dummy = np.empty((self.vehicleNb, 3))
     for i,elt in enumerate(self.plots):
       dummy[i]=self.plots[elt][0](elt) # call register get function 
       self.plots[elt][1].setData(pos=dummy[i])
-
 
     self.sp.setData(pos=dummy)
 
