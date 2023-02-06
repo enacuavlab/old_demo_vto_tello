@@ -16,13 +16,24 @@ import time
 import threading,queue
 import numpy as np
 
+"""
 #------------------------------------------------------------------------------
-#
-# ./exec_1.py --as 45
-# ./exec_1.py --as 45[-1.1,-2.2,3.3]
-# ./exec_1.py --as 45[-1.1,-2.2,3.3][1.1,2.2,3.3]
-#
-#------------------------------------------------------------------------------
+
+# simulated target (ex:888)
+
+./exec_1.py --ts 888
+./exec_1.py --ts 888 --as 45[-1.1,-2.2,3.3]
+./exec_1.py --ts 888 --ar 65
+./exec_1.py --ts 888 --as 45[-1.1,-2.2,3.3] --ar 65
+
+# real target (should be 888 from optitrack)
+
+./exec_1.py --as 45[-1.1,-2.2,3.3]
+./exec_1.py --ar 65
+./exec_1.py --as 45[-1.1,-2.2,3.3] --ar 65
+
+------------------------------------------------------------------------------
+"""
 acTarg = [888,'Helmet']
 
 optiFreq = 20 # Check that optitrack stream at least with this value
@@ -35,16 +46,23 @@ class Flag(threading.Event):
     return self.is_set()
 
 #------------------------------------------------------------------------------
-def main(droneReal,droneSim):
+def main(targSim,droneReal,droneSim):
 
   vehicleListReal = []
+  vehicleListSim = []
+
   rigidBodyDict = {}
-  rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
+
+  if not targSim: rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
+  else: 
+    vel = Vehicle(targSim)
+    vel.position = (0.5,0.0,3.0)
+    vehicleListSim.append(vel)
+
   for ac in droneReal:
     vehicleListReal.append(Vehicle(ac))
     rigidBodyDict[ac]=Rigidbody(ac)
 
-  vehicleListSim = []
   for i,elt in droneSim.items():
     vel = Vehicle(i)
     vel.position = elt
@@ -69,9 +87,8 @@ def main(droneReal,droneSim):
     threadCmdReal.start()
 
   if vehicleListSim:
-    threadCmdSim = Thread_commandSim(flag,vehicleListSim)
+    threadCmdSim = Thread_commandSim(flag,targSim,vehicleListSim,rigidBodyDict,acTarg[0])
     threadCmdSim.start()
-      
 
   try:
     DrawingGL(FPS,vehicleListSim,rigidBodyDict).start()
@@ -106,6 +123,7 @@ def argsforSim(param):
 if __name__=="__main__":
   droneSim = {}  
   parser = argparse.ArgumentParser()
+  parser.add_argument('--ts', dest='targSim', type=int)
   parser.add_argument('--ar', nargs='+', dest='realacs', type=int)
   parser.add_argument('--as', nargs='+', type=argsforSim)
   args = parser.parse_args()
@@ -117,4 +135,4 @@ if __name__=="__main__":
     ret,droneAddrs = initNetDrone(args.realacs)
     if ret: droneReal = droneAddrs
   if ret:
-    main(droneReal,droneSim)
+    main(args.targSim,droneReal,droneSim)
