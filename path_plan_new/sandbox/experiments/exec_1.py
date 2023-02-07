@@ -56,7 +56,7 @@ def main(targSim,droneReal,droneSim):
   if not targSim: rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
   else: 
     vel = Vehicle(targSim)
-    vel.position = (0.5,0.0,3.0)
+    vel.position = (4.0,0.0,3.0)
     vehicleListSim.append(vel)
 
   for ac in droneReal:
@@ -91,7 +91,7 @@ def main(targSim,droneReal,droneSim):
     threadCmdSim.start()
 
   try:
-    DrawingGL(FPS,vehicleListSim,rigidBodyDict).start()
+    DrawingGL(FPS,vehicleListSim,rigidBodyDict,threadCmdSim.triggersim).start()
 
   except KeyboardInterrupt:
     print("KeyboardInterrupt")

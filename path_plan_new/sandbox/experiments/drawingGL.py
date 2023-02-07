@@ -36,7 +36,7 @@ class View3D():
 
 
   def update(self,dummy):
-    self.spd.setData(pos=dummy)
+    self.spd.setData(pos=dummy,color=self.color)
     for i,elt in enumerate(self.txts):
       self.txts[elt].setData(pos=dummy[i])
 
@@ -48,7 +48,8 @@ class DrawingGL():
     ret = np.zeros(3)
     for i,elt in enumerate(self.vehiclelstsim):
       if arg == elt.ID:
-        ret = (self.vehiclelstsim[i].position)
+        pos = (self.vehiclelstsim[i].position)
+        ret = (-pos[0],-pos[1],pos[2])
     return(ret)
  
 
@@ -56,16 +57,17 @@ class DrawingGL():
     return (self.rigidBodyDict[arg].position)
 
 
-  def __init__(self,FPS,vehiclelstsim,rigidBodyDict):
+  def __init__(self,FPS,vehiclelstsim,rigidBodyDict,triggerfunc):
 
     self.FPS = FPS
     self.vehiclelstsim= vehiclelstsim
     self.rigidBodyDict= rigidBodyDict
+    self.triggerfunc = triggerfunc
     self.vehicleNb = len(vehiclelstsim)+len(rigidBodyDict)
 
     self.app = QtWidgets.QApplication(sys.argv)
     self.w = pg.GraphicsLayoutWidget()
-    self.layout = QtWidgets.QGridLayout(self.w)
+
     self.w.setWindowTitle('ENAC VTO')
     self.w.setMinimumWidth(1200)
     self.w.show()
@@ -74,17 +76,21 @@ class DrawingGL():
     self.avg_cpu = 0.0
     self.store_time = time.time()
 
+    self.lay1 = QtWidgets.QVBoxLayout(self.w)
+    self.lay2 = QtWidgets.QHBoxLayout()
+    self.lay3 = QtWidgets.QHBoxLayout()
+    self.lay1.addLayout(self.lay2) 
+    self.lay1.addLayout(self.lay3) 
+
     self.fps_text = QtWidgets.QLabel("TEXT")
     self.fps_text.setStyleSheet("QLabel{font-size: 40pt; color:rgba(226, 39, 134, 127)}")
 
-    self.layout.addWidget(self.fps_text,0,0,1,-1) # menus one on purpose !
-    self.layout.setRowStretch(self.layout.rowCount(), 1)
+    self.lay2.addWidget(self.fps_text)
+    self.startsim_btn = QtWidgets.QPushButton("StartStop")
+    self.startsim_btn.setFixedSize(QtCore.QSize(100, 50))
+    self.startsim_btn.clicked.connect(self.triggerfunc)
 
-#    self.layout.addWidget(self.fps_text,0,0,1,1)
-#    self.startsim_btn = QtWidgets.QPushButton("StartSim")
-#    self.startsim_btn.setFixedSize(QtCore.QSize(50, 50))
-#    self.layout.addWidget(self.startsim_btn,0,1,1,-1) 
-#    self.layout.setRowStretch(self.layout.rowCount(), 1)
+    self.lay2.addWidget(self.startsim_btn)
 
     self.v1=View3D(self.vehicleNb,25,40,90)
     self.v2=View3D(self.vehicleNb,25,90,90)
@@ -105,8 +111,8 @@ class DrawingGL():
       self.v2.addplot(elt,color[i])
       i = i+1
 
-    self.layout.addWidget(self.v1.glvw,1,0,1,1)
-    self.layout.addWidget(self.v2.glvw,1,1,1,1)
+    self.lay3.addWidget(self.v1.glvw)
+    self.lay3.addWidget(self.v2.glvw)
 
 
 
