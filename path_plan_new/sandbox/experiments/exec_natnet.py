@@ -8,7 +8,6 @@ from mission import Thread_mission
 from command import Thread_commandReal
 from simulation import Thread_commandSim
 from vehicle import Vehicle
-from netdrone import initNetDrone
 from drawingGL import DrawingGL
 
 """
