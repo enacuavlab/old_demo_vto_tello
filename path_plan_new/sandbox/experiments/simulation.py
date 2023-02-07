@@ -35,7 +35,8 @@ class Thread_commandSim(threading.Thread):
               theta = theta + np.pi/200
               step[0] = r*np.cos(theta)
               step[1] = r*np.sin(theta)
-              elt.position = np.add(elt.position,step)
+
+              elt.position = np.subtract(elt.position,step)
               targetpos = elt.position
             else:
               targetpos = self.rigidBodyDict[self.targetId].position # get real target 

@@ -12,6 +12,36 @@ import pyqtgraph.opengl as gl
 import pyqtgraph as pg
 
 #--------------------------------------------------------------------------------
+class View3D():
+
+  def __init__(self,nbvehicle,dist,elev,azim):
+    self.glvw = gl.GLViewWidget()
+    self.glvw.opts['distance'] = dist
+    self.glvw.opts['elevation'] = elev
+    self.glvw.opts['azimuth'] =azim
+    self.color = np.empty((nbvehicle,4))
+    self.nbcol = 0
+    self.spd = gl.GLScatterPlotItem(size=0.5,color=self.color,pxMode=False)
+    self.glvw.addItem(self.spd)
+    self.glvw.addItem(gl.GLGridItem(size=QtGui.QVector3D(10,10,10)))
+    self.txts = {}
+
+
+  def addplot(self,ident,color):
+    txt = gl.GLTextItem(text=str(ident))
+    self.glvw.addItem(txt)
+    self.txts[ident] = txt
+    self.color[self.nbcol]=color
+    self.nbcol = self.nbcol+1
+
+
+  def update(self,dummy):
+    self.spd.setData(pos=dummy)
+    for i,elt in enumerate(self.txts):
+      self.txts[elt].setData(pos=dummy[i])
+
+
+#--------------------------------------------------------------------------------
 class DrawingGL():
 
   def get_listpos(self,arg):
@@ -46,46 +76,37 @@ class DrawingGL():
 
     self.fps_text = QtWidgets.QLabel("TEXT")
     self.fps_text.setStyleSheet("QLabel{font-size: 40pt; color:rgba(226, 39, 134, 127)}")
-    self.layout.addWidget(self.fps_text,0,0,1,1)
+
+    self.layout.addWidget(self.fps_text,0,0,1,-1) # menus one on purpose !
     self.layout.setRowStretch(self.layout.rowCount(), 1)
 
+#    self.layout.addWidget(self.fps_text,0,0,1,1)
+#    self.startsim_btn = QtWidgets.QPushButton("StartSim")
+#    self.startsim_btn.setFixedSize(QtCore.QSize(50, 50))
+#    self.layout.addWidget(self.startsim_btn,0,1,1,-1) 
+#    self.layout.setRowStretch(self.layout.rowCount(), 1)
 
-    glvw3D = gl.GLViewWidget()
-    glvw3D.opts['distance'] = 20
-    glvw3D.opts['elevation'] = 40
-    glvw3D.opts['azimuth'] = 90
-
-    glvw2D = gl.GLViewWidget()
-    glvw2D.opts['distance'] = 15
-    glvw2D.opts['elevation'] = 90
-    glvw2D.opts['azimuth'] = 90
+    self.v1=View3D(self.vehicleNb,25,40,90)
+    self.v2=View3D(self.vehicleNb,25,90,90)
 
     self.plots = {}
     i = 0
     color = np.empty((self.vehicleNb,4))
     for elt in vehiclelstsim: 
-      lab = gl.GLTextItem(text=str(elt.ID))
-      glvw3D.addItem(lab)
-      self.plots[elt.ID]=(self.get_listpos,lab)
+      self.plots[elt.ID]=(self.get_listpos)
       color[i] =  (1.0, 0.0, 0.0, 0.5)
+      self.v1.addplot(elt.ID,color[i])
+      self.v2.addplot(elt.ID,color[i])
       i = i+1
     for elt in rigidBodyDict: 
-      lab = gl.GLTextItem(text=str(elt))
-      glvw3D.addItem(lab)
-      self.plots[elt]=(self.get_dicpos,lab)
+      self.plots[elt]=(self.get_dicpos)
       color[i] = (0.0, 1.0, 0.0, 0.5)
+      self.v1.addplot(elt,color[i])
+      self.v2.addplot(elt,color[i])
       i = i+1
 
-
-    self.sp3d = gl.GLScatterPlotItem(size=0.5,color=color,pxMode=False)
-    glvw3D.addItem(self.sp3d)
-    glvw3D.addItem(gl.GLGridItem(size=QtGui.QVector3D(10,10,10)))
-    self.layout.addWidget(glvw3D,1,0,1,1)
-
-    self.sp2d = gl.GLScatterPlotItem(size=0.5,color=color,pxMode=False)
-    glvw2D.addItem(self.sp2d)
-    glvw2D.addItem(gl.GLGridItem(size=QtGui.QVector3D(10,10,10)))
-    self.layout.addWidget(glvw2D,1,1,1,1)
+    self.layout.addWidget(self.v1.glvw,1,0,1,1)
+    self.layout.addWidget(self.v2.glvw,1,1,1,1)
 
 
 
@@ -103,11 +124,11 @@ class DrawingGL():
 
     dummy = np.empty((self.vehicleNb, 3))
     for i,elt in enumerate(self.plots):
-      dummy[i]=self.plots[elt][0](elt) # call register get function 
-      self.plots[elt][1].setData(pos=dummy[i])
+      dummy[i]=self.plots[elt](elt) # call register get function 
 
-    self.sp3d.setData(pos=dummy)
-    self.sp2d.setData(pos=dummy)
+    self.v1.update(dummy)
+    self.v2.update(dummy)
+
 
 
   def start(self):
