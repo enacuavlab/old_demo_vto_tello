@@ -10,13 +10,10 @@ import time
 #------------------------------------------------------------------------------
 class Thread_commandSim(threading.Thread):
 
-  def __init__(self,quitflag,targsim,simlst,rigidBodyDict,targetId):
+  def __init__(self,quitflag,vehicles):
     threading.Thread.__init__(self)
     self.quitflag = quitflag
-    self.targsim = targsim
-    self.simlst = simlst
-    self.rigidBodyDict = rigidBodyDict
-    self.targetId = targetId
+    self.vehicles = vehicles
     self.suspend = True
 
   def run(self):
@@ -29,23 +26,25 @@ class Thread_commandSim(threading.Thread):
       while not self.quitflag:
         time.sleep(1/60)
         if not self.suspend:
-          for i,elt in enumerate(self.simlst):
-            if i==0:
-              if elt.ID == 888:  # simulated target will circle at constant speed
-  
+          for elt in self.vehicles:
+
+            if (elt == 888):  # simulated target will circle at constant speed
+              if (self.vehicles[elt][0] == 1):
                 theta = theta + target_speed * np.pi / 800.0
                 step[0] = r*np.cos(theta)
                 step[1] = r*np.sin(theta)
-                step[2] = elt.position[2]
-                elt.position = step
-                targetpos = elt.position
+                step[2] = self.vehicles[elt][2](elt)[2]
+                self.vehicles[elt][2].position = step
+                targetpos = step
               else:
-                targetpos = self.rigidBodyDict[self.targetId].position # get real target 
-            
-            if (i > 0) or (i==0 and elt.ID != 888): 
-              deltapos = np.subtract(targetpos,elt.position)
-              deltastep = deltapos * drone_speed / 250.0
-              elt.position = np.add(elt.position,deltastep)
+                targetpos = self.vehicles[elt][2](elt)
+           
+            else:
+              if (self.vehicles[elt][0] == 1):
+                pos = self.vehicles[elt][2](elt)
+                deltapos = np.subtract(targetpos,pos)
+                deltastep = deltapos * drone_speed / 250.0
+                self.vehicles[elt][2].position = np.add(pos,deltastep)
 
     finally: 
       print("Thread_commandSim stop")

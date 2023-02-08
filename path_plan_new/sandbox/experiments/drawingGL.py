@@ -44,28 +44,12 @@ class View3D():
 #--------------------------------------------------------------------------------
 class DrawingGL():
 
-  def get_listpos(self,arg):
-    ret = np.zeros(3)
-    for i,elt in enumerate(self.vehiclelstsim):
-      if arg == elt.ID:
-        ret = (self.vehiclelstsim[i].position)
-    return (ret)
- 
 
-  def get_dicpos(self,arg):
-    return (self.rigidBodyDict[arg].position)
-#    pos = (self.rigidBodyDict[arg].position)
-#    ret = (pos[0],pos[1],pos[2])
-#    return (ret)
+  def __init__(self,vehicles,triggerfunc):
 
-
-  def __init__(self,FPS,vehiclelstsim,rigidBodyDict,triggerfunc):
-
-    self.FPS = FPS
-    self.vehiclelstsim= vehiclelstsim
-    self.rigidBodyDict= rigidBodyDict
+    self.vehicles = vehicles
     self.triggerfunc = triggerfunc
-    self.vehicleNb = len(vehiclelstsim)+len(rigidBodyDict)
+    self.vehicleNb = len(vehicles)
 
     self.app = QtWidgets.QApplication(sys.argv)
     self.w = pg.GraphicsLayoutWidget()
@@ -91,9 +75,8 @@ class DrawingGL():
     self.startsim_btn = QtWidgets.QPushButton("StartStop")
     self.startsim_btn.setFixedSize(QtCore.QSize(100, 50))
     self.lay2.addWidget(self.startsim_btn)
-    if vehiclelstsim: self.startsim_btn.clicked.connect(self.triggerfunc)
+    if (triggerfunc): self.startsim_btn.clicked.connect(self.triggerfunc)
     else: self.startsim_btn.setEnabled(False)
-
 
 
     self.v1=View3D(self.vehicleNb,25,40,-90)
@@ -102,15 +85,11 @@ class DrawingGL():
     self.plots = {}
     i = 0
     color = np.empty((self.vehicleNb,4))
-    for elt in vehiclelstsim: 
-      self.plots[elt.ID]=(self.get_listpos)
-      color[i] =  (1.0, 0.0, 0.0, 0.5)
-      self.v1.addplot(elt.ID,color[i])
-      self.v2.addplot(elt.ID,color[i])
-      i = i+1
-    for elt in rigidBodyDict: 
-      self.plots[elt]=(self.get_dicpos)
-      color[i] = (0.0, 1.0, 0.0, 0.5)
+
+    for elt in vehicles:
+      self.plots[elt]=vehicles[elt][2]
+      if (vehicles[elt][0]): color[i] =  (1.0, 0.0, 0.0, 0.5)
+      else: color[i] = (0.0, 1.0, 0.0, 0.5)
       self.v1.addplot(elt,color[i])
       self.v2.addplot(elt,color[i])
       i = i+1

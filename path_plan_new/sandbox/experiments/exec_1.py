@@ -36,64 +36,42 @@ acTarg = [888,'Helmet']
 
 optiFreq = 20 # Check that optitrack stream at least with this value
 
-FPS = 30
-
 #------------------------------------------------------------------------------
 class Flag(threading.Event):
   def __bool__(self):
     return self.is_set()
 
 #------------------------------------------------------------------------------
-def main(targSim,droneReal,droneSim):
-
-  vehicleListReal = []
-  vehicleListSim = []
-  rigidBodyDict ={}
-  if not targSim:
-     rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
-     vehicleListReal.append(Vehicle(acTarg[0]))
-  else:
-    vel = Vehicle(targSim)
-    vel.position = (4.0,0.0,3.0)
-    vehicleListSim.append(vel)
-
-  for elt in droneSim:
-    vel = Vehicle(elt)
-    vel.position = droneSim[elt]
-    vehicleListSim.append(vel)
-
-  for elt in droneReal: 
-     rigidBodyDict[elt] = Rigidbody(elt)
-     vehicleListReal.append(Vehicle(elt))
+def main(bodies,vehicles):
 
   flag = Flag()
 
-  if vehicleListReal:
+  if len(bodies):
     try:
-      threadMotion = Thread_natnet(flag,rigidBodyDict,optiFreq)
+      threadMotion = Thread_natnet(flag,bodies,optiFreq)
       threadMotion.start()
     except ValueError as msg:
       print(msg)
       exit()
 
-
   commands = queue.Queue()
 
-  threadMission = Thread_mission(flag,commands,targSim,rigidBodyDict,acTarg[0])
-  threadMission.start()
-
-  threadCmdReal = Thread_commandReal(flag,commands,droneReal)
-  threadCmdReal.start()
-
-  if vehicleListSim:
-    threadCmdSim = Thread_commandSim(flag,targSim,vehicleListSim,rigidBodyDict,acTarg[0])
+#  threadMission = Thread_mission(flag,commands,targSim,rigidBodyDict,acTarg[0])
+#  threadMission.start()
+#
+#  threadCmdReal = Thread_commandReal(flag,commands,droneReal)
+#  threadCmdReal.start()
+#
+  if (len(bodies)<len(vehicles)):
+    threadCmdSim = Thread_commandSim(flag,vehicles)
     threadCmdSim.start()
 
   try:
-    if vehicleListSim:
-      DrawingGL(FPS,vehicleListSim,rigidBodyDict,threadCmdSim.triggersim).start()
+
+    if (len(bodies)<len(vehicles)):
+      DrawingGL(vehicles,threadCmdSim.triggersim).start()
     else:
-      DrawingGL(FPS,vehicleListSim,rigidBodyDict,None).start()
+      DrawingGL(vehicles,None).start()
 
 
   except KeyboardInterrupt:
@@ -103,12 +81,19 @@ def main(targSim,droneReal,droneSim):
   finally:
     print("finally")
     flag.set()
-    if vehicleListSim: threadCmdSim.join()
-    if vehicleListReal:
-      threadMotion.join()
-      threadMission.join()
-      threadCmdReal.join()
+    if (len(bodies)<len(vehicles)): threadCmdSim.join()
+#    if vehicleListReal:
+#      threadMission.join()
+#      threadCmdReal.join()
 
+
+#------------------------------------------------------------------------------
+def get_realpos(arg):
+  return (bodies[arg].position)
+
+#------------------------------------------------------------------------------
+def get_simpos(arg):
+  return (vehicles[arg][1].position)
 
 #------------------------------------------------------------------------------
 def argsforSim(param):
@@ -137,4 +122,27 @@ if __name__=="__main__":
     ret,droneAddrs = initNetDrone(args.realacs)
     if ret: droneReal = droneAddrs
   if ret:
-    main(args.targSim,droneReal,droneSim)
+
+    vehicles = {}
+    bodies = {}
+
+    if not args.targSim:
+      bodies[acTarg[0]] = Rigidbody(acTarg[0])
+      vel = Vehicle(acTarg[0])
+      vehicles[acTarg[0]]=(0,vel,get_realpos)
+    else:
+      vel = Vehicle(args.targSim)
+      vel.position = (4.0,0.0,3.0)
+      vehicles[acTarg[0]]=(1,vel,get_simpos)
+
+    for elt in droneReal:
+      bodies[elt] = Rigidbody(elt)
+      vel = Vehicle(elt)
+      vehicles[elt]=(0,vel,get_realpos)
+
+    for elt in droneSim:
+      vel = Vehicle(elt)
+      vel.position = droneSim[elt]
+      vehicles[elt]=(1,vel,get_simpos)
+
+    main(bodies,vehicles)
