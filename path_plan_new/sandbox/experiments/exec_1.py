@@ -56,14 +56,22 @@ def main(targSim,droneReal,droneSim):
     vel.position = (4.0,0.0,3.0)
     vehicleListSim.append(vel)
 
+  for elt in droneSim:
+    vel = Vehicle(elt)
+    vel.position = droneSim[elt]
+    vehicleListSim.append(vel)
+
+
   flag = Flag()
 
-  try:
-    threadMotion = Thread_natnet(flag,rigidBodyDict,optiFreq)
-    threadMotion.start()
-  except ValueError as msg:
-    print(msg)
-    exit()
+  if vehicleListReal:
+    try:
+      threadMotion = Thread_natnet(flag,rigidBodyDict,optiFreq)
+      threadMotion.start()
+    except ValueError as msg:
+      print(msg)
+      exit()
+
 
   commands = queue.Queue()
 
