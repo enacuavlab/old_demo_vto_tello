@@ -51,6 +51,7 @@ def main(targSim,droneReal,droneSim):
   rigidBodyDict ={}
   if not targSim:
      rigidBodyDict[acTarg[0]] = Rigidbody(acTarg[0])
+     vehicleListReal.append(Vehicle(acTarg[0]))
   else:
     vel = Vehicle(targSim)
     vel.position = (4.0,0.0,3.0)
@@ -61,6 +62,9 @@ def main(targSim,droneReal,droneSim):
     vel.position = droneSim[elt]
     vehicleListSim.append(vel)
 
+  for elt in droneReal: 
+     rigidBodyDict[elt] = Rigidbody(elt)
+     vehicleListReal.append(Vehicle(elt))
 
   flag = Flag()
 
@@ -75,10 +79,10 @@ def main(targSim,droneReal,droneSim):
 
   commands = queue.Queue()
 
-  threadMission = Thread_mission(flag,targSim,rigidBodyDict,acTarg[0])
+  threadMission = Thread_mission(flag,commands,targSim,rigidBodyDict,acTarg[0])
   threadMission.start()
 
-  threadCmdReal = Thread_commandReal(flag,commands)
+  threadCmdReal = Thread_commandReal(flag,commands,droneReal)
   threadCmdReal.start()
 
   if vehicleListSim:

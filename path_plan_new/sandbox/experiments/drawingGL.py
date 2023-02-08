@@ -48,15 +48,15 @@ class DrawingGL():
     ret = np.zeros(3)
     for i,elt in enumerate(self.vehiclelstsim):
       if arg == elt.ID:
-        pos = (self.vehiclelstsim[i].position)
-        ret = (-pos[0],-pos[1],pos[2])
+        ret = (self.vehiclelstsim[i].position)
     return (ret)
  
 
   def get_dicpos(self,arg):
-    pos = (self.rigidBodyDict[arg].position)
-    ret = (-pos[0],-pos[1],pos[2])
-    return (ret)
+    return (self.rigidBodyDict[arg].position)
+#    pos = (self.rigidBodyDict[arg].position)
+#    ret = (pos[0],pos[1],pos[2])
+#    return (ret)
 
 
   def __init__(self,FPS,vehiclelstsim,rigidBodyDict,triggerfunc):
@@ -88,14 +88,16 @@ class DrawingGL():
     self.fps_text.setStyleSheet("QLabel{font-size: 40pt; color:rgba(226, 39, 134, 127)}")
 
     self.lay2.addWidget(self.fps_text)
-    if vehiclelstsim:
-      self.startsim_btn = QtWidgets.QPushButton("StartStop")
-      self.startsim_btn.setFixedSize(QtCore.QSize(100, 50))
-      self.startsim_btn.clicked.connect(self.triggerfunc)
-      self.lay2.addWidget(self.startsim_btn)
+    self.startsim_btn = QtWidgets.QPushButton("StartStop")
+    self.startsim_btn.setFixedSize(QtCore.QSize(100, 50))
+    self.lay2.addWidget(self.startsim_btn)
+    if vehiclelstsim: self.startsim_btn.clicked.connect(self.triggerfunc)
+    else: self.startsim_btn.setEnabled(False)
 
-    self.v1=View3D(self.vehicleNb,25,40,90)
-    self.v2=View3D(self.vehicleNb,25,90,90)
+
+
+    self.v1=View3D(self.vehicleNb,25,40,-90)
+    self.v2=View3D(self.vehicleNb,25,90,-90)
 
     self.plots = {}
     i = 0

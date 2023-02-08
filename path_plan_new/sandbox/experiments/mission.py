@@ -11,15 +11,26 @@ telloFreq = 10
 #------------------------------------------------------------------------------
 class Thread_mission(threading.Thread):
 
-  def __init__(self,quitflag,targetsim,rigidBodyDict,targetId):
+  def __init__(self,quitflag,commands,targetsim,rigidBodyDict,targetId):
     threading.Thread.__init__(self)
     self.quitflag = quitflag
+    self.commands = commands
     self.targetsim = targetsim
     self.rigidBodyDict = rigidBodyDict
     self.targetId = targetId
 
 
   def run(self):
+    self.commands.put(('command',))
+    self.commands.put(('streamon',))
+    time.sleep(1)
+    self.commands.put(('takeoff',))
+    time.sleep(7)
+    self.guidanceLoop() # drone should be flying to have position from optitrack
+    self.commands.put(('land',))
+
+
+  def guidanceLoop(self):
     unvalidcpt = 0
     telloPeriod = 1/telloFreq
     try: 

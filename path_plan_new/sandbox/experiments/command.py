@@ -8,10 +8,11 @@ import threading
 #------------------------------------------------------------------------------
 class Thread_commandReal(threading.Thread):
 
-  def __init__(self,quitflag,commands):
+  def __init__(self,quitflag,commands,droneReal):
     threading.Thread.__init__(self)
     self.quitflag = quitflag
     self.commands = commands
+    self.droneReal = droneReal
     self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
   def run(self):
@@ -20,11 +21,11 @@ class Thread_commandReal(threading.Thread):
        vtupple=self.commands.get()
        print(vtupple)
 
-#      if (len(vtupple)==2):
-#        sock.sendto(vtupple[0].encode(encoding="utf-8"),telloNet[vtupple[1]][1])
-#      else:
-#        for ac in telloNet:
-#          sock.sendto(vtupple[0].encode(encoding="utf-8"),telloNet[ac][1])
+       if (len(vtupple)==2):
+         self.sock.sendto(vtupple[0].encode(encoding="utf-8"),self.droneReal[vtupple[1]][1])
+       else:
+        for ac in self.droneReal:
+          self.sock.sendto(vtupple[0].encode(encoding="utf-8"),self.droneReal[ac][1])
 
     finally: 
       print("Thread_command stop")
