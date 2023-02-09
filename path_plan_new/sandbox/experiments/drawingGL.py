@@ -115,6 +115,7 @@ class DrawingGL():
     for i,elt in enumerate(self.plots):
       dummy[i]=self.plots[elt](elt) # call register get function 
 
+
     self.v1.update(dummy)
     self.v2.update(dummy)
 

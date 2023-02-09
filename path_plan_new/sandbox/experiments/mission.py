@@ -38,6 +38,8 @@ class Thread_mission(threading.Thread):
         time.sleep(telloPeriod)
         if not self.targetsim:
 
+          heading = np.arctan2(targetPos[1]-v.position[1],targetPos[0]-v.position[0])
+
           if not self.rigidBodyDict[self.targetId].valid:
             unvalidcpt = unvalidcpt+1
             if unvalidcpt == 10: break

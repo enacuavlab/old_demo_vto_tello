@@ -15,17 +15,22 @@ from drawingGL import DrawingGL
 #------------------------------------------------------------------------------
 
 # simulated target (ex:888)
+# real target (should be 888 from optitrack)
 
+# full simulation
 ./exec_1.py --ts 888
 ./exec_1.py --ts 888 --as 45[-1.1,-2.2,3.3]
+
+# hybrid real and simulation
 ./exec_1.py --ts 888 --ar 65
 ./exec_1.py --ts 888 --as 45[-1.1,-2.2,3.3] --ar 65
 
-# real target (should be 888 from optitrack)
-
+# full real
 ./exec_1.py
-./exec_1.py --as 45[-1.1,-2.2,3.3]
 ./exec_1.py --ar 65
+
+# hybrid real and simulation
+./exec_1.py --as 45[-1.1,-2.2,3.3]
 ./exec_1.py --as 45[-1.1,-2.2,3.3] --ar 65
 
 ------------------------------------------------------------------------------
@@ -88,14 +93,6 @@ def main(bodies,vehicles):
 
 
 #------------------------------------------------------------------------------
-def get_realpos(arg):
-  return (bodies[arg].position)
-
-#------------------------------------------------------------------------------
-def get_simpos(arg):
-  return (vehicles[arg][1].position)
-
-#------------------------------------------------------------------------------
 def argsforSim(param):
   global droneSim
   for elt in param.split():
@@ -129,20 +126,20 @@ if __name__=="__main__":
     if not args.targSim:
       bodies[acTarg[0]] = Rigidbody(acTarg[0])
       vel = Vehicle(acTarg[0])
-      vehicles[acTarg[0]]=(0,vel,get_realpos)
+      vehicles[acTarg[0]]=(True,vel,(lambda arg: bodies[arg].position))
     else:
       vel = Vehicle(args.targSim)
       vel.position = (4.0,0.0,3.0)
-      vehicles[acTarg[0]]=(1,vel,get_simpos)
+      vehicles[acTarg[0]]=(False,vel,(lambda arg: vehicles[arg][1].position))
 
     for elt in droneReal:
       bodies[elt] = Rigidbody(elt)
       vel = Vehicle(elt)
-      vehicles[elt]=(0,vel,get_realpos)
+      vehicles[elt]=(True,vel,(lambda arg: bodies[arg].position))
 
     for elt in droneSim:
       vel = Vehicle(elt)
       vel.position = droneSim[elt]
-      vehicles[elt]=(1,vel,get_simpos)
+      vehicles[elt]=(False,vel,(lambda arg: vehicles[arg][1].position))
 
     main(bodies,vehicles)
