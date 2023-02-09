@@ -45,10 +45,10 @@ class View3D():
 class DrawingGL():
 
 
-  def __init__(self,vehicles,triggerfunc):
+  def __init__(self,vehicles,trigger):
 
     self.vehicles = vehicles
-    self.triggerfunc = triggerfunc
+    self.trigger = trigger
     self.vehicleNb = len(vehicles)
 
     self.app = QtWidgets.QApplication(sys.argv)
@@ -75,7 +75,7 @@ class DrawingGL():
     self.startsim_btn = QtWidgets.QPushButton("StartStop")
     self.startsim_btn.setFixedSize(QtCore.QSize(100, 50))
     self.lay2.addWidget(self.startsim_btn)
-    if (triggerfunc): self.startsim_btn.clicked.connect(self.triggerfunc)
+    if (trigger): self.startsim_btn.clicked.connect(self.trigger.triggersim)
     else: self.startsim_btn.setEnabled(False)
 
 
@@ -112,9 +112,11 @@ class DrawingGL():
       self.fps_text.setText("FPS "+f'{fps:.2f}'+"             CPU "+f'{self.avg_cpu:.2f}')
 
     dummy = np.empty((self.vehicleNb, 3))
+    pos = np.empty((self.vehicleNb, 3))
+    val = np.empty((self.vehicleNb, 3))
     for i,elt in enumerate(self.plots):
-      dummy[i]=self.plots[elt](elt) # call register get function 
-
+      (pos,valid)=self.plots[elt](elt) # call register get function 
+      dummy[i] = pos
 
     self.v1.update(dummy)
     self.v2.update(dummy)

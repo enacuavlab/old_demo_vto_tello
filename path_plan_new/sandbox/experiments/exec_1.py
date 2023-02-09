@@ -61,23 +61,20 @@ def main(bodies,vehicles):
 
   commands = queue.Queue()
 
-#  threadMission = Thread_mission(flag,commands,targSim,rigidBodyDict,acTarg[0])
-#  threadMission.start()
-#
-#  threadCmdReal = Thread_commandReal(flag,commands,droneReal)
-#  threadCmdReal.start()
-#
+  threadMission = Thread_mission(flag,commands,vehicles)
+  threadMission.start()
+
+  threadCmdReal = Thread_commandReal(flag,commands,vehicles)
+  threadCmdReal.start()
+
   if (len(bodies)<len(vehicles)):
     threadCmdSim = Thread_commandSim(flag,vehicles)
     threadCmdSim.start()
+  else: threadCmdSim =  None
 
   try:
 
-    if (len(bodies)<len(vehicles)):
-      DrawingGL(vehicles,threadCmdSim.triggersim).start()
-    else:
-      DrawingGL(vehicles,None).start()
-
+    if (len(bodies)<len(vehicles)): DrawingGL(vehicles,threadCmdSim).start()
 
   except KeyboardInterrupt:
     print("KeyboardInterrupt")
@@ -87,9 +84,9 @@ def main(bodies,vehicles):
     print("finally")
     flag.set()
     if (len(bodies)<len(vehicles)): threadCmdSim.join()
-#    if vehicleListReal:
-#      threadMission.join()
-#      threadCmdReal.join()
+    if (len(bodies)>0): 
+      threadMission.join()
+      threadCmdReal.join()
 
 
 #------------------------------------------------------------------------------
@@ -123,23 +120,23 @@ if __name__=="__main__":
     vehicles = {}
     bodies = {}
 
-    if not args.targSim:
+    if not args.targSim:                             # first element is the simulated or real target
       bodies[acTarg[0]] = Rigidbody(acTarg[0])
       vel = Vehicle(acTarg[0])
-      vehicles[acTarg[0]]=(True,vel,(lambda arg: bodies[arg].position))
+      vehicles[acTarg[0]]=(True,vel,(lambda arg: (bodies[arg].position,bodies[arg].valid)))
     else:
       vel = Vehicle(args.targSim)
       vel.position = (4.0,0.0,3.0)
-      vehicles[acTarg[0]]=(False,vel,(lambda arg: vehicles[arg][1].position))
+      vehicles[acTarg[0]]=(False,vel,(lambda arg: (vehicles[arg][1].position,True)))
 
     for elt in droneReal:
       bodies[elt] = Rigidbody(elt)
-      vel = Vehicle(elt)
-      vehicles[elt]=(True,vel,(lambda arg: bodies[arg].position))
+      vel = Vehicle(elt)                             # real = True, vehicle, get_position/valid, ip/port addr
+      vehicles[elt]=(True,vel,(lambda arg: (bodies[arg].position,bodies[arg].valid)),droneReal[elt][1])
 
     for elt in droneSim:
       vel = Vehicle(elt)
-      vel.position = droneSim[elt]
-      vehicles[elt]=(False,vel,(lambda arg: vehicles[arg][1].position))
+      vel.position = droneSim[elt]                   # real = False, vehicle, get_position
+      vehicles[elt]=(False,vel,(lambda arg: (vehicles[arg][1].position,True)))
 
     main(bodies,vehicles)

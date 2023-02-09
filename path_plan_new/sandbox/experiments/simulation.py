@@ -33,7 +33,8 @@ class Thread_commandSim(threading.Thread):
                 theta = theta + target_speed * np.pi / 800.0
                 step[0] = r*np.cos(theta)
                 step[1] = r*np.sin(theta)
-                step[2] = self.vehicles[elt][2](elt)[2] # call registered get pos function, and keep z
+                (pos,valid) = self.vehicles[elt][2](elt) # call registered get pos function, and keep z
+                step[2] = pos[2] 
                 self.vehicles[elt][1].position = step
                 targetpos = step
               else:
@@ -41,8 +42,7 @@ class Thread_commandSim(threading.Thread):
            
             else:
               if not (self.vehicles[elt][0]):
-                print(elt)
-                pos = self.vehicles[elt][2](elt) # call reistered get pos function
+                (pos,valid) = self.vehicles[elt][2](elt) # call reistered get pos function
                 deltapos = np.subtract(targetpos,pos)
                 deltastep = deltapos * drone_speed / 250.0
                 self.vehicles[elt][1].position = np.add(pos,deltastep)
@@ -55,5 +55,3 @@ class Thread_commandSim(threading.Thread):
   def triggersim(self):
     if self.suspend: self.suspend = False
     else: self.suspend = True
-    print(self.suspend)
-
