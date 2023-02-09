@@ -74,7 +74,7 @@ def main(bodies,vehicles):
 
   try:
 
-    if (len(bodies)<len(vehicles)): DrawingGL(vehicles,threadCmdSim).start()
+    DrawingGL(vehicles,threadCmdSim).start()
 
   except KeyboardInterrupt:
     print("KeyboardInterrupt")
@@ -132,7 +132,8 @@ if __name__=="__main__":
     for elt in droneReal:
       bodies[elt] = Rigidbody(elt)
       vel = Vehicle(elt)                             # real = True, vehicle, get_position/valid, ip/port addr
-      vehicles[elt]=(True,vel,(lambda arg: (bodies[arg].position,bodies[arg].valid)),droneReal[elt][1])
+      vehicles[elt]=(True,vel,(lambda arg: (bodies[arg].position,bodies[arg].valid)),droneReal[elt][1],\
+                      (lambda arg: (bodies[arg].velocity,bodies[arg].heading)))
 
     for elt in droneSim:
       vel = Vehicle(elt)

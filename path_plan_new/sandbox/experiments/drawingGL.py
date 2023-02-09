@@ -19,9 +19,9 @@ class View3D():
     self.glvw.opts['distance'] = dist
     self.glvw.opts['elevation'] = elev
     self.glvw.opts['azimuth'] =azim
-    self.color = np.empty((nbvehicle,4))
+    self.colors = np.empty((nbvehicle,4))
     self.nbcol = 0
-    self.spd = gl.GLScatterPlotItem(size=0.5,color=self.color,pxMode=False)
+    self.spd = gl.GLScatterPlotItem(size=0.5,color=self.colors,pxMode=False)
     self.glvw.addItem(self.spd)
     self.glvw.addItem(gl.GLGridItem(size=QtGui.QVector3D(10,10,10)))
     self.txts = {}
@@ -31,14 +31,14 @@ class View3D():
     txt = gl.GLTextItem(text=str(ident))
     self.glvw.addItem(txt)
     self.txts[ident] = txt
-    self.color[self.nbcol]=color
+    self.colors[self.nbcol]=color
     self.nbcol = self.nbcol+1
 
 
-  def update(self,dummy):
-    self.spd.setData(pos=dummy,color=self.color)
+  def update(self,newpos,newcolors):
+    self.spd.setData(pos=newpos,color=newcolors)
     for i,elt in enumerate(self.txts):
-      self.txts[elt].setData(pos=dummy[i])
+      self.txts[elt].setData(pos=newpos[i])
 
 
 #--------------------------------------------------------------------------------
@@ -78,20 +78,20 @@ class DrawingGL():
     if (trigger): self.startsim_btn.clicked.connect(self.trigger.triggersim)
     else: self.startsim_btn.setEnabled(False)
 
-
     self.v1=View3D(self.vehicleNb,25,40,-90)
     self.v2=View3D(self.vehicleNb,25,90,-90)
 
     self.plots = {}
     i = 0
-    color = np.empty((self.vehicleNb,4))
+    self.colors = np.empty((self.vehicleNb,4))
+    self.positions = np.empty((self.vehicleNb,3))
 
     for elt in vehicles:
       self.plots[elt]=vehicles[elt][2]
-      if (vehicles[elt][0]): color[i] =  (1.0, 0.0, 0.0, 0.5)
-      else: color[i] = (0.0, 1.0, 0.0, 0.5)
-      self.v1.addplot(elt,color[i])
-      self.v2.addplot(elt,color[i])
+      if (vehicles[elt][0]): self.colors[i] =  (1.0, 0.0, 0.0, 50)
+      else: self.colors[i] = (0.0, 1.0, 0.0, 50)
+      self.v1.addplot(elt,self.colors[i])
+      self.v2.addplot(elt,self.colors[i])
       i = i+1
 
     self.lay3.addWidget(self.v1.glvw)
@@ -111,16 +111,14 @@ class DrawingGL():
       self.store_cpu = (0.0,0.0)
       self.fps_text.setText("FPS "+f'{fps:.2f}'+"             CPU "+f'{self.avg_cpu:.2f}')
 
-    dummy = np.empty((self.vehicleNb, 3))
-    pos = np.empty((self.vehicleNb, 3))
-    val = np.empty((self.vehicleNb, 3))
+    newcolors = np.copy(self.colors)   # to preserve original colors array
     for i,elt in enumerate(self.plots):
-      (pos,valid)=self.plots[elt](elt) # call register get function 
-      dummy[i] = pos
+      (pos,val)=self.plots[elt](elt) # call register get function 
+      if val: self.positions[i] = pos
+      else: newcolors[i][3]=0
 
-    self.v1.update(dummy)
-    self.v2.update(dummy)
-
+    self.v1.update(self.positions,newcolors)
+    self.v2.update(self.positions,newcolors)
 
 
   def start(self):

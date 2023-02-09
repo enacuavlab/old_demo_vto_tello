@@ -42,7 +42,7 @@ class Thread_commandSim(threading.Thread):
            
             else:
               if not (self.vehicles[elt][0]):
-                (pos,valid) = self.vehicles[elt][2](elt) # call reistered get pos function
+                (pos,valid) = self.vehicles[elt][2](elt) # call registered get pos function
                 deltapos = np.subtract(targetpos,pos)
                 deltastep = deltapos * drone_speed / 250.0
                 self.vehicles[elt][1].position = np.add(pos,deltastep)
