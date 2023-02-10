@@ -63,6 +63,10 @@ class Vehicle():
       clamp100(int(V_err_xyz[2]*k)),  # up_down_velocity
       clamp100(int(-err_heading*k)))  # yaw_velocity
 
-    cmd_val = (int(-V_err_xyz[1]*k),int(V_err_xyz[0]*k),int(V_err_xyz[2]*k),int(-err_heading*k))
+    cmd_val = (
+      clamp100(int(-V_err_xyz[1]*k)), 
+      clamp100(int(V_err_xyz[0]*k)), 
+      clamp100(int(V_err_xyz[2]*k)), 
+      clamp100(int(-err_heading*k))) 
 
     return(cmd,cmd_val)

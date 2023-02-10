@@ -6,8 +6,8 @@ import numpy as np
 from natnet4 import Rigidbody,Thread_natnet
 from mission import Thread_mission
 from command import Thread_commandReal
-from simulation import Thread_commandSim, SimBody
-from vehicle import Vehicle
+from simulation import Thread_commandSim, Simbody
+#from vehicle import Vehicle
 from netdrone import initNetDrone
 from drawingGL import DrawingGL
 
@@ -47,7 +47,7 @@ class Flag(threading.Event):
     return self.is_set()
 
 #------------------------------------------------------------------------------
-def main(bodies,vehicles):
+def main(bodies,mobiles):
 
   flag = Flag()
 
@@ -62,27 +62,26 @@ def main(bodies,vehicles):
   commands = queue.Queue()
 
 
-  if (len(bodies)<len(vehicles)):
-    threadCmdSim = Thread_commandSim(flag,vehicles)
+  if (len(bodies)<len(mobiles)):
+    threadCmdSim = Thread_commandSim(flag,mobiles)
     threadCmdSim.start()
   else: threadCmdSim =  None
 
-  if (len(vehicles)>1):
-    threadMission = Thread_mission(flag,commands,vehicles,threadCmdSim)     # for flying and simulated tellos
+  if (len(mobiles)>1):
+    threadMission = Thread_mission(flag,commands,mobiles)     # for flying and simulated tellos
     threadMission.start()
   else: threadMission =  None
 
 
-  if (len(bodies)>0) and (len(vehicles)>1):
-    threadCmdReal = Thread_commandReal(flag,commands,vehicles) # for flying tellos
-#    threadCmdReal.start()
+  if (len(bodies)>0) and (len(mobiles)>1):
+    threadCmdReal = Thread_commandReal(flag,commands,mobiles) # for flying tellos
+    threadCmdReal.start()
   else: 
     threadCmdReal = None
 
 
   try:
-
-    DrawingGL(vehicles,threadCmdSim,threadMission).start()
+    DrawingGL(mobiles,threadCmdSim,threadMission).start()
 
   except KeyboardInterrupt:
     print("KeyboardInterrupt")
@@ -91,9 +90,9 @@ def main(bodies,vehicles):
   finally:
     print("finally")
     flag.set()
-#    if (len(bodies)<len(vehicles)): threadCmdSim.join()
-#    if (len(bodies)>0) and (len(vehicles)>1): threadCmdReal.join()
-#    if (len(vehicles)>1): threadMission.join()
+    if (len(bodies)<len(mobiles)): threadCmdSim.join()
+    if (len(bodies)>0) and (len(mobiles)>1): threadCmdReal.join()
+    if (len(mobiles)>1): threadMission.join()
 
 
 #------------------------------------------------------------------------------
@@ -124,32 +123,25 @@ if __name__=="__main__":
     if ret: droneReal = droneAddrs
   if ret:
 
-    vehicles = {}
+    mobiles = {}
     bodies = {}
     simus = {}
 
     if not args.targSim:                             # first element is the simulated or real target
       bodies[acTarg[0]] = Rigidbody(acTarg[0])
-      vel = Vehicle(acTarg[0])
-      vehicles[acTarg[0]]=(True,vel,(lambda arg: (bodies[arg].position,bodies[arg].valid,bodies[arg].velocity,bodies[arg].heading)))
+      mobiles[acTarg[0]]=(True,bodies[acTarg[0]])
     else:
-      simus[acTarg[0]] = SimBody(acTarg[0])
-      vel = Vehicle(args.targSim)
-      vel.position = (4.0,0.0,3.0)
-      simus[acTarg[0]] = SimBody(acTarg[0])
-      simus[acTarg[0]].position = vel.position
-      vehicles[acTarg[0]]=(False,vel,(lambda arg: (simus[arg].position,simus[arg].valid,simus[arg].velocity,simus[arg].heading)),(lambda arg,pos:(self.simus[arg].position:=pos)))
+      simus[acTarg[0]] = Simbody(acTarg[0])
+      simus[acTarg[0]].position = (4.0,0.0,3.0)  
+      mobiles[acTarg[0]]=(False,simus[acTarg[0]])
 
     for elt in droneReal:
       bodies[elt] = Rigidbody(elt)
-      vel = Vehicle(elt)  
-      vehicles[elt]=(True,vel,(lambda arg: (bodies[arg].position,bodies[arg].valid,bodies[arg].velocity,bodies[arg].heading)),droneReal[elt][1])
+      mobiles[elt]=(True,bodies[elt],droneReal[elt][1])
 
     for elt in droneSim:
-      vel = Vehicle(elt)
-      vel.position = droneSim[elt] 
-      simus[elt] = SimBody(elt)
-      simus[elt].position = vel.position
-      vehicles[elt]=(False,vel,(lambda arg: (simus[arg].position,simus[arg].valid,simus[arg].velocity,simus[arg].heading)))
+      simus[elt] = Simbody(elt)
+      simus[elt].position = droneSim[elt] 
+      mobiles[elt]=(False,simus[elt])
 
-    main(bodies,vehicles)
+    main(bodies,mobiles)

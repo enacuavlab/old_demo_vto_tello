@@ -64,12 +64,11 @@ def compute_flow(vehicles):
 #------------------------------------------------------------------------------
 class Thread_mission(threading.Thread):
 
-  def __init__(self,quitflag,commands,vehicles,threadsim):
+  def __init__(self,quitflag,commands,mobiles):
     threading.Thread.__init__(self)
     self.quitflag = quitflag
     self.commands = commands
-    self.vehicles = vehicles
-    self.threadsim = threadsim
+    self.mobiles = mobiles
     self.suspend = True
     self.telloPeriod = 1/telloFreq
 
@@ -78,8 +77,6 @@ class Thread_mission(threading.Thread):
   def run(self):
 
     while (self.suspend): time.sleep(self.telloPeriod)
-
-    print("runnnig MISSION")
 
 #    self.commands.put(('command',))
 #    self.commands.put(('streamon',))
@@ -95,39 +92,41 @@ class Thread_mission(threading.Thread):
     loop_incr = 0
 
     flyings=[]
-    for elt in self.vehicles:
+    for elt in self.mobiles:
       if (elt!=888): flyings.append(Vehicle(elt))
 
-    print("looping MISSION")
     try: 
 
       while not self.quitflag and loop_incr < 15000 and not (self.suspend):
         loop_incr = loop_incr + 1
         time.sleep(self.telloPeriod)
 
-        if (self.vehicles[888][0]):               # check suspended position capture for real target 
-          (pos,val,vel,head)=self.vehicles[888][2](888)
-          if not val:
+        if (self.mobiles[888][0]):               # check suspended position capture for real target 
+          if not (velf.mobiles[888][1].valid):
             unvalidcpt = unvalidcpt+1
             if unvalidcpt == 10: break
             else: continue
           else: unvalidcpt= 0
 
-        (targetPos,val,vel,head)=self.vehicles[888][2](888)
-        for elt in self.vehicles:
+        for elt in self.mobiles:
           if (elt != 888):
-            (pos,val,vel,head)=self.vehicles[elt][2](elt)
-            for vel in flyings:
-              if (vel.ID == elt):
-                vel.update(pos,vel,head,targetPos,5)
+            for v in flyings:
+              if (v.ID == elt):
+                offset = self.mobiles[elt][1]
+                offsettarget = self.mobiles[888][1]
+                v.update(offset.position,offset.velocity,offset.heading,offsettarget.position,5)
 
-#        flow_vels = compute_flow(flyings)
-#  
-#        for i,v in enumerate(flyings):
-#          (cmd,cmd_val)=v.apply_flow(flow_vels[i])
-#          if (self.vehicles[v.ID][0]): self.commands.put((cmd,v.ID))
-#          else: self.threadsim.put(v.ID,cmd_val)
-
+        flow_vels = compute_flow(flyings)
+ 
+        i = 0
+        for elt in self.mobiles:
+          if (elt != 888):
+            for v in flyings:
+              if (v.ID == elt):
+                (cmd,cmd_val)=v.apply_flow(flow_vels[i])
+                i=i+1
+                if (self.mobiles[v.ID][0]): self.commands.put((cmd,v.ID))
+                else: self.mobiles[v.ID][1].appliedspeed = cmd_val
  
     finally: 
       print("Thread_mission stop")

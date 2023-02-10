@@ -93,7 +93,7 @@ class DrawingGL():
     self.positions = np.empty((self.vehicleNb,3))
 
     for elt in vehicles:
-      self.plots[elt]=vehicles[elt][2]
+      self.plots[elt]=vehicles[elt][1]
       if (vehicles[elt][0]): self.colors[i] =  (1.0, 0.0, 0.0, 50)
       else: self.colors[i] = (0.0, 1.0, 0.0, 50)
       self.v1.addplot(elt,self.colors[i])
@@ -119,8 +119,8 @@ class DrawingGL():
 
     newcolors = np.copy(self.colors)   # to preserve original colors array
     for i,elt in enumerate(self.plots):
-      (pos,val,vel,head)=self.plots[elt](elt) # call register get function 
-      if val: self.positions[i] = pos
+#      (pos,val,vel,head)=self.plots[elt](elt) # call register get function 
+      if self.plots[elt].valid: self.positions[i] = self.plots[elt].position
       else: newcolors[i][3]=0
 
     self.v1.update(self.positions,newcolors)
