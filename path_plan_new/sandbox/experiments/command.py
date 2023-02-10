@@ -25,7 +25,7 @@ class Thread_commandReal(threading.Thread):
          self.sock.sendto(vtupple[0].encode(encoding="utf-8"),self.vehicles[vtupple[1]][3])
        else:
         for ac in self.vehicles:
-          if (self.vehicles[ac][0]):
+          if (self.vehicles[ac][0]) and (ac != 888):
             self.sock.sendto(vtupple[0].encode(encoding="utf-8"),self.vehicles[ac][3])
 
     finally: 

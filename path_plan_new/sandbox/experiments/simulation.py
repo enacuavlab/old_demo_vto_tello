@@ -52,6 +52,6 @@ class Thread_commandSim(threading.Thread):
       print("Thread_commandSim stop")
 
 
-  def triggersim(self):
+  def trigger(self):
     if self.suspend: self.suspend = False
     else: self.suspend = True

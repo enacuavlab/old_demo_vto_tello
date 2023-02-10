@@ -69,9 +69,15 @@ class Thread_mission(threading.Thread):
     self.quitflag = quitflag
     self.commands = commands
     self.vehicles = vehicles
+    self.suspend = True
+    self.telloPeriod = 1/telloFreq
+
 
 
   def run(self):
+
+    while (self.suspend): time.sleep(self.telloPeriod)
+
     self.commands.put(('command',))
     self.commands.put(('streamon',))
     time.sleep(1)
@@ -83,7 +89,6 @@ class Thread_mission(threading.Thread):
 
   def guidanceLoop(self):
     unvalidcpt = 0
-    telloPeriod = 1/telloFreq
     loop_incr = 0
 
     flyings=[]
@@ -92,9 +97,9 @@ class Thread_mission(threading.Thread):
 
     try: 
 
-      while not self.quitflag and loop_incr < 15000:
+      while not self.quitflag and loop_incr < 15000 and not (self.suspend):
         loop_incr = loop_incr + 1
-        time.sleep(telloPeriod)
+        time.sleep(self.telloPeriod)
 
         if (self.vehicles[888][0]):               # check suspended position capture for real target 
           (pos,valid)=self.vehicles[888][2](888)
@@ -122,3 +127,8 @@ class Thread_mission(threading.Thread):
  
     finally: 
       print("Thread_mission stop")
+
+
+  def trigger(self):
+    if self.suspend: self.suspend = False
+    else: self.suspend = True

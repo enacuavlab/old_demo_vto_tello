@@ -19,19 +19,27 @@ from drawingGL import DrawingGL
 
 # full simulation
 ./exec_1.py --ts 888
+0 1
 ./exec_1.py --ts 888 --as 45[-1.1,-2.2,3.3]
+0 2
 
 # hybrid real and simulation
 ./exec_1.py --ts 888 --ar 65
+1 2
 ./exec_1.py --ts 888 --as 45[-1.1,-2.2,3.3] --ar 65
+1 3
 
 # full real
 ./exec_1.py
+1 1
 ./exec_1.py --ar 65
+2 2
 
 # hybrid real and simulation
 ./exec_1.py --as 45[-1.1,-2.2,3.3]
+1 2
 ./exec_1.py --as 45[-1.1,-2.2,3.3] --ar 65
+2 3
 
 ------------------------------------------------------------------------------
 """
@@ -61,11 +69,18 @@ def main(bodies,vehicles):
 
   commands = queue.Queue()
 
-  threadMission = Thread_mission(flag,commands,vehicles)
-  threadMission.start()
+  print(len(bodies),len(vehicles))
 
-  threadCmdReal = Thread_commandReal(flag,commands,vehicles)
-  threadCmdReal.start()
+  if(len(bodies)>0) and (len(vehicles)>1):
+    threadMission = Thread_mission(flag,commands,vehicles)
+    threadMission.start()
+    threadCmdReal = Thread_commandReal(flag,commands,vehicles)
+    threadCmdReal.start()
+  else: 
+    threadMission = None
+    threadCmdReal = None
+
+
 
   if (len(bodies)<len(vehicles)):
     threadCmdSim = Thread_commandSim(flag,vehicles)
@@ -74,7 +89,7 @@ def main(bodies,vehicles):
 
   try:
 
-    DrawingGL(vehicles,threadCmdSim).start()
+    DrawingGL(vehicles,threadCmdSim,threadMission).start()
 
   except KeyboardInterrupt:
     print("KeyboardInterrupt")
@@ -84,7 +99,7 @@ def main(bodies,vehicles):
     print("finally")
     flag.set()
     if (len(bodies)<len(vehicles)): threadCmdSim.join()
-    if (len(bodies)>0): 
+    if(len(bodies)>0) and (len(vehicles)>1):
       threadMission.join()
       threadCmdReal.join()
 

@@ -45,10 +45,11 @@ class View3D():
 class DrawingGL():
 
 
-  def __init__(self,vehicles,trigger):
+  def __init__(self,vehicles,triggersim,triggerreal):
 
     self.vehicles = vehicles
-    self.trigger = trigger
+    self.triggersim = triggersim
+    self.triggerreal = triggerreal
     self.vehicleNb = len(vehicles)
 
     self.app = QtWidgets.QApplication(sys.argv)
@@ -72,11 +73,16 @@ class DrawingGL():
     self.fps_text.setStyleSheet("QLabel{font-size: 40pt; color:rgba(226, 39, 134, 127)}")
 
     self.lay2.addWidget(self.fps_text)
-    self.startsim_btn = QtWidgets.QPushButton("StartStop")
+    self.startsim_btn = QtWidgets.QPushButton("SIM")
+    self.startreal_btn = QtWidgets.QPushButton("REAL")
     self.startsim_btn.setFixedSize(QtCore.QSize(100, 50))
+    self.startreal_btn.setFixedSize(QtCore.QSize(100, 50))
     self.lay2.addWidget(self.startsim_btn)
-    if (trigger): self.startsim_btn.clicked.connect(self.trigger.triggersim)
+    self.lay2.addWidget(self.startreal_btn)
+    if (triggersim): self.startsim_btn.clicked.connect(self.triggersim.trigger)
     else: self.startsim_btn.setEnabled(False)
+    if (triggerreal): self.startreal_btn.clicked.connect(self.triggerreal.trigger)
+    else: self.startreal_btn.setEnabled(False)
 
     self.v1=View3D(self.vehicleNb,25,40,-90)
     self.v2=View3D(self.vehicleNb,25,90,-90)
