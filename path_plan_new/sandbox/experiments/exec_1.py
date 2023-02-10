@@ -6,7 +6,7 @@ import numpy as np
 from natnet4 import Rigidbody,Thread_natnet
 from mission import Thread_mission
 from command import Thread_commandReal
-from simulation import Thread_commandSim
+from simulation import Thread_commandSim, SimBody
 from vehicle import Vehicle
 from netdrone import initNetDrone
 from drawingGL import DrawingGL
@@ -19,27 +19,19 @@ from drawingGL import DrawingGL
 
 # full simulation
 ./exec_1.py --ts 888
-0 1
 ./exec_1.py --ts 888 --as 45[-1.1,-2.2,3.3]
-0 2
 
 # hybrid real and simulation
 ./exec_1.py --ts 888 --ar 65
-1 2
 ./exec_1.py --ts 888 --as 45[-1.1,-2.2,3.3] --ar 65
-1 3
 
 # full real
 ./exec_1.py
-1 1
 ./exec_1.py --ar 65
-2 2
 
 # hybrid real and simulation
 ./exec_1.py --as 45[-1.1,-2.2,3.3]
-1 2
 ./exec_1.py --as 45[-1.1,-2.2,3.3] --ar 65
-2 3
 
 ------------------------------------------------------------------------------
 """
@@ -69,23 +61,24 @@ def main(bodies,vehicles):
 
   commands = queue.Queue()
 
-  print(len(bodies),len(vehicles))
-
-  if(len(bodies)>0) and (len(vehicles)>1):
-    threadMission = Thread_mission(flag,commands,vehicles)
-    threadMission.start()
-    threadCmdReal = Thread_commandReal(flag,commands,vehicles)
-    threadCmdReal.start()
-  else: 
-    threadMission = None
-    threadCmdReal = None
-
-
 
   if (len(bodies)<len(vehicles)):
     threadCmdSim = Thread_commandSim(flag,vehicles)
     threadCmdSim.start()
   else: threadCmdSim =  None
+
+  if (len(vehicles)>1):
+    threadMission = Thread_mission(flag,commands,vehicles,threadCmdSim)     # for flying and simulated tellos
+    threadMission.start()
+  else: threadMission =  None
+
+
+  if (len(bodies)>0) and (len(vehicles)>1):
+    threadCmdReal = Thread_commandReal(flag,commands,vehicles) # for flying tellos
+#    threadCmdReal.start()
+  else: 
+    threadCmdReal = None
+
 
   try:
 
@@ -98,10 +91,9 @@ def main(bodies,vehicles):
   finally:
     print("finally")
     flag.set()
-    if (len(bodies)<len(vehicles)): threadCmdSim.join()
-    if(len(bodies)>0) and (len(vehicles)>1):
-      threadMission.join()
-      threadCmdReal.join()
+#    if (len(bodies)<len(vehicles)): threadCmdSim.join()
+#    if (len(bodies)>0) and (len(vehicles)>1): threadCmdReal.join()
+#    if (len(vehicles)>1): threadMission.join()
 
 
 #------------------------------------------------------------------------------
@@ -134,25 +126,30 @@ if __name__=="__main__":
 
     vehicles = {}
     bodies = {}
+    simus = {}
 
     if not args.targSim:                             # first element is the simulated or real target
       bodies[acTarg[0]] = Rigidbody(acTarg[0])
       vel = Vehicle(acTarg[0])
-      vehicles[acTarg[0]]=(True,vel,(lambda arg: (bodies[arg].position,bodies[arg].valid)))
+      vehicles[acTarg[0]]=(True,vel,(lambda arg: (bodies[arg].position,bodies[arg].valid,bodies[arg].velocity,bodies[arg].heading)))
     else:
+      simus[acTarg[0]] = SimBody(acTarg[0])
       vel = Vehicle(args.targSim)
       vel.position = (4.0,0.0,3.0)
-      vehicles[acTarg[0]]=(False,vel,(lambda arg: (vehicles[arg][1].position,True)))
+      simus[acTarg[0]] = SimBody(acTarg[0])
+      simus[acTarg[0]].position = vel.position
+      vehicles[acTarg[0]]=(False,vel,(lambda arg: (simus[arg].position,simus[arg].valid,simus[arg].velocity,simus[arg].heading)),(lambda arg,pos:(self.simus[arg].position:=pos)))
 
     for elt in droneReal:
       bodies[elt] = Rigidbody(elt)
-      vel = Vehicle(elt)                             # real = True, vehicle, get_position/valid, ip/port addr
-      vehicles[elt]=(True,vel,(lambda arg: (bodies[arg].position,bodies[arg].valid)),droneReal[elt][1],\
-                      (lambda arg: (bodies[arg].velocity,bodies[arg].heading)))
+      vel = Vehicle(elt)  
+      vehicles[elt]=(True,vel,(lambda arg: (bodies[arg].position,bodies[arg].valid,bodies[arg].velocity,bodies[arg].heading)),droneReal[elt][1])
 
     for elt in droneSim:
       vel = Vehicle(elt)
-      vel.position = droneSim[elt]                   # real = False, vehicle, get_position
-      vehicles[elt]=(False,vel,(lambda arg: (vehicles[arg][1].position,True)))
+      vel.position = droneSim[elt] 
+      simus[elt] = SimBody(elt)
+      simus[elt].position = vel.position
+      vehicles[elt]=(False,vel,(lambda arg: (simus[arg].position,simus[arg].valid,simus[arg].velocity,simus[arg].heading)))
 
     main(bodies,vehicles)

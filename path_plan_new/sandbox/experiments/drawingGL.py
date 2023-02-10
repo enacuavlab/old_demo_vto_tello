@@ -119,7 +119,7 @@ class DrawingGL():
 
     newcolors = np.copy(self.colors)   # to preserve original colors array
     for i,elt in enumerate(self.plots):
-      (pos,val)=self.plots[elt](elt) # call register get function 
+      (pos,val,vel,head)=self.plots[elt](elt) # call register get function 
       if val: self.positions[i] = pos
       else: newcolors[i][3]=0
 

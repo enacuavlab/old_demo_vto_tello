@@ -64,11 +64,12 @@ def compute_flow(vehicles):
 #------------------------------------------------------------------------------
 class Thread_mission(threading.Thread):
 
-  def __init__(self,quitflag,commands,vehicles):
+  def __init__(self,quitflag,commands,vehicles,threadsim):
     threading.Thread.__init__(self)
     self.quitflag = quitflag
     self.commands = commands
     self.vehicles = vehicles
+    self.threadsim = threadsim
     self.suspend = True
     self.telloPeriod = 1/telloFreq
 
@@ -78,11 +79,13 @@ class Thread_mission(threading.Thread):
 
     while (self.suspend): time.sleep(self.telloPeriod)
 
-    self.commands.put(('command',))
-    self.commands.put(('streamon',))
-    time.sleep(1)
-    self.commands.put(('takeoff',))
-    time.sleep(7)
+    print("runnnig MISSION")
+
+#    self.commands.put(('command',))
+#    self.commands.put(('streamon',))
+#    time.sleep(1)
+#    self.commands.put(('takeoff',))
+#    time.sleep(7)
     self.guidanceLoop() # drone should be flying to have position from optitrack
     self.commands.put(('land',))
 
@@ -95,6 +98,7 @@ class Thread_mission(threading.Thread):
     for elt in self.vehicles:
       if (elt!=888): flyings.append(Vehicle(elt))
 
+    print("looping MISSION")
     try: 
 
       while not self.quitflag and loop_incr < 15000 and not (self.suspend):
@@ -102,28 +106,28 @@ class Thread_mission(threading.Thread):
         time.sleep(self.telloPeriod)
 
         if (self.vehicles[888][0]):               # check suspended position capture for real target 
-          (pos,valid)=self.vehicles[888][2](888)
-          if not valid:
+          (pos,val,vel,head)=self.vehicles[888][2](888)
+          if not val:
             unvalidcpt = unvalidcpt+1
             if unvalidcpt == 10: break
             else: continue
           else: unvalidcpt= 0
 
-        (targetPos,val) = self.vehicles[888][2](888)
+        (targetPos,val,vel,head)=self.vehicles[888][2](888)
         for elt in self.vehicles:
-          if (self.vehicles[elt][0]) and (elt != 888):
-            (pos,val) = self.vehicles[elt][2](elt)
-            (velo,head) = self.vehicles[elt][4](elt)
-
+          if (elt != 888):
+            (pos,val,vel,head)=self.vehicles[elt][2](elt)
             for vel in flyings:
               if (vel.ID == elt):
-                vel.update(pos,velo,head,targetPos,5)
+                vel.update(pos,vel,head,targetPos,5)
 
-        flow_vels = compute_flow(flyings)
-  
-        for i,v in enumerate(flyings):
-          cmd=v.apply_flow(flow_vels[i])
-          self.commands.put((cmd,v.ID))
+#        flow_vels = compute_flow(flyings)
+#  
+#        for i,v in enumerate(flyings):
+#          (cmd,cmd_val)=v.apply_flow(flow_vels[i])
+#          if (self.vehicles[v.ID][0]): self.commands.put((cmd,v.ID))
+#          else: self.threadsim.put(v.ID,cmd_val)
+
  
     finally: 
       print("Thread_mission stop")
