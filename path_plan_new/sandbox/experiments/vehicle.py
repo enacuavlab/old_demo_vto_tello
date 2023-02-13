@@ -57,11 +57,11 @@ class Vehicle():
     def clamp100(x: int) -> int:
       return max(-100, min(100, x))
 
-    cmd = 'rc {} {} {} {}'.format(
-      clamp100(int(-V_err_xyz[1]*k)), # left_right_velocity
-      clamp100(int(V_err_xyz[0]*k)),  # forward_backward_velocity
-      clamp100(int(V_err_xyz[2]*k)),  # up_down_velocity
-      clamp100(int(-err_heading*k)))  # yaw_velocity
+#    cmd = 'rc {} {} {} {}'.format(
+#      clamp100(int(-V_err_xyz[1]*k)), # left_right_velocity
+#      clamp100(int(V_err_xyz[0]*k)),  # forward_backward_velocity
+#      clamp100(int(V_err_xyz[2]*k)),  # up_down_velocity
+#      clamp100(int(-err_heading*k)))  # yaw_velocity
 
     cmd_val = (
       clamp100(int(-V_err_xyz[1]*k)), 
@@ -69,4 +69,4 @@ class Vehicle():
       clamp100(int(V_err_xyz[2]*k)), 
       clamp100(int(-err_heading*k))) 
 
-    return(cmd,cmd_val)
+    return(cmd_val)

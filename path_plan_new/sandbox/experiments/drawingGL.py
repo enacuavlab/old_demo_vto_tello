@@ -69,7 +69,7 @@ class DrawingGL():
     self.lay1.addLayout(self.lay2) 
     self.lay1.addLayout(self.lay3) 
 
-    self.fps_text = QtWidgets.QLabel("TEXT")
+    self.fps_text = QtWidgets.QLabel("")
     self.fps_text.setStyleSheet("QLabel{font-size: 40pt; color:rgba(226, 39, 134, 127)}")
 
     self.lay2.addWidget(self.fps_text)

@@ -5,9 +5,7 @@ import numpy as np
 
 from natnet4 import Rigidbody,Thread_natnet
 from mission import Thread_mission
-from command import Thread_commandReal
 from simulation import Thread_commandSim, Simbody
-#from vehicle import Vehicle
 from netdrone import initNetDrone
 from drawingGL import DrawingGL
 
@@ -59,8 +57,6 @@ def main(bodies,mobiles):
       print(msg)
       exit()
 
-  commands = queue.Queue()
-
 
   if (len(bodies)<len(mobiles)):
     threadCmdSim = Thread_commandSim(flag,mobiles)
@@ -68,16 +64,9 @@ def main(bodies,mobiles):
   else: threadCmdSim =  None
 
   if (len(mobiles)>1):
-    threadMission = Thread_mission(flag,commands,mobiles)     # for flying and simulated tellos
+    threadMission = Thread_mission(flag,mobiles)     # for flying and simulated tellos
     threadMission.start()
   else: threadMission =  None
-
-
-  if (len(bodies)>0) and (len(mobiles)>1):
-    threadCmdReal = Thread_commandReal(flag,commands,mobiles) # for flying tellos
-    threadCmdReal.start()
-  else: 
-    threadCmdReal = None
 
 
   try:

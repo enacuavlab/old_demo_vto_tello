@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import threading
-import queue
+import socket
 import time
 import threading
 
@@ -61,16 +61,25 @@ def compute_flow(vehicles):
 
   return flow_vels
 
+
 #------------------------------------------------------------------------------
 class Thread_mission(threading.Thread):
 
-  def __init__(self,quitflag,commands,mobiles):
+  def __init__(self,quitflag,mobiles):
     threading.Thread.__init__(self)
     self.quitflag = quitflag
-    self.commands = commands
     self.mobiles = mobiles
     self.suspend = True
     self.telloPeriod = 1/telloFreq
+    self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+
+  def send_command(self,droneID,cmdstr):
+    if (droneID != 0): self.sock.sendto(cmdstr.encode(encoding="utf-8"),self.mobiles[droneID][2])
+    else: 
+      cmd = cmdstr.encode(encoding="utf-8")
+      for ac in self.mobiles:
+        if (self.mobiles[ac][0]) and (ac != 888): self.sock.sendto(cmd,self.mobiles[ac][2])
 
 
 
@@ -78,13 +87,15 @@ class Thread_mission(threading.Thread):
 
     while (self.suspend): time.sleep(self.telloPeriod)
 
-#    self.commands.put(('command',))
-#    self.commands.put(('streamon',))
-#    time.sleep(1)
-#    self.commands.put(('takeoff',))
-#    time.sleep(7)
+    self.send_command(0,'command')
+    self.send_command(0,'streamon')
+    time.sleep(1)
+    self.send_command(0,'takeoff')
+    time.sleep(7)
+
     self.guidanceLoop() # drone should be flying to have position from optitrack
-    self.commands.put(('land',))
+    self.send_command(0,'land')
+
 
 
   def guidanceLoop(self):
@@ -99,7 +110,7 @@ class Thread_mission(threading.Thread):
 
       while not self.quitflag and loop_incr < 15000 and not (self.suspend):
         loop_incr = loop_incr + 1
-        time.sleep(self.telloPeriod)
+        starttime = time.time()
 
         if (self.mobiles[888][0]):               # check suspended position capture for real target 
           if not (velf.mobiles[888][1].valid):
@@ -123,11 +134,13 @@ class Thread_mission(threading.Thread):
           if (elt != 888):
             for v in flyings:
               if (v.ID == elt):
-                (cmd,cmd_val)=v.apply_flow(flow_vels[i])
+                cmd=v.apply_flow(flow_vels[i])
                 i=i+1
-                if (self.mobiles[v.ID][0]): self.commands.put((cmd,v.ID))
-                else: self.mobiles[v.ID][1].appliedspeed = cmd_val
+                if (self.mobiles[v.ID][0]): self.send_command(v.ID,'rc {} {} {} {}'.format(cmd[0],cmd[1],cmd[2],cmd[3]))
+                else: self.mobiles[v.ID][1].appliedspeed = cmd
  
+        time.sleep(self.telloPeriod-(time.time()-starttime))
+
     finally: 
       print("Thread_mission stop")
 
