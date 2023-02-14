@@ -28,7 +28,7 @@ class Simbody():
   
       deltapos = np.array([self.appliedspeed[0],self.appliedspeed[1],self.appliedspeed[2]])
   
-      drone_speed = 1.0
+      drone_speed = 0.2
   
       deltastep = deltapos * drone_speed / 250.0
       self.position = np.add(self.position,deltastep)
@@ -47,13 +47,13 @@ class Thread_commandSim(threading.Thread):
 
 
 
-  def put(self,elt,vcmd):
-    print(elt,vcmd)
-    roll = vcmd[0]
-    pitch = vcmd[1]
-    alt = vcmd[2]
-    yaw = vcmd[3]
-    self.mobiles[elt].position
+#  def put(self,elt,vcmd):
+#    print(elt,vcmd)
+#    roll = vcmd[0]
+#    pitch = vcmd[1]
+#    alt = vcmd[2]
+#    yaw = vcmd[3]
+#    self.mobiles[elt].position
 
 
 

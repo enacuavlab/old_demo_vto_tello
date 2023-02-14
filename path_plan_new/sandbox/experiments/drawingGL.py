@@ -89,15 +89,15 @@ class DrawingGL():
 
     self.plots = {}
     i = 0
-#    self.colors = np.empty((self.vehicleNb,4))
-#    self.positions = np.empty((self.vehicleNb,3))
     self.colors = np.zeros((self.vehicleNb,4))
     self.positions = np.zeros((self.vehicleNb,3))
 
     for elt in vehicles:
       self.plots[elt]=vehicles[elt][1]
-      if (vehicles[elt][0]): self.colors[i] =  (1.0, 0.0, 0.0, 50)
-      else: self.colors[i] = (0.0, 1.0, 0.0, 50)
+      if elt == 888: self.colors[i] =  (0.0, 1.0, 0.0, 50)
+      else:
+        if (vehicles[elt][0]): self.colors[i] =  (1.0, 0.0, 0.0, 50)
+        else: self.colors[i] = (0.0, 0.0, 1.0, 50)
       self.v1.addplot(elt,self.colors[i])
       self.v2.addplot(elt,self.colors[i])
       i = i+1
