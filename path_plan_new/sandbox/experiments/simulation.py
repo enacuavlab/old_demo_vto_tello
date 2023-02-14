@@ -7,7 +7,7 @@ import queue
 import time
 
 #------------------------------------------------------------------------------
-simuFreq = 1
+simuFreq = 20
 
 #------------------------------------------------------------------------------
 class Simbody():
@@ -24,8 +24,6 @@ class Simbody():
 
   def computemotion(self):
 
-    print(self.appliedspeed)
-
     if not np.all(((self.appliedspeed)==0)):
   
       deltapos = np.array([self.appliedspeed[0],self.appliedspeed[1],self.appliedspeed[2]])
@@ -35,7 +33,6 @@ class Simbody():
       deltastep = deltapos * drone_speed / 250.0
       self.position = np.add(self.position,deltastep)
       self.appliedspeed = np.zeros(4)
-      print(self.position)
  
 
 #------------------------------------------------------------------------------
@@ -67,12 +64,12 @@ class Thread_commandSim(threading.Thread):
       step = np.zeros(3)
       r = 4.0
       theta = 0
-      print("runnins SIM")
-
 
       while not self.quitflag:
+        starttime = time.time()
+
         if not self.suspend:
-          starttime = time.time()
+
           for elt in self.mobiles:
 
             if (elt == 888):  # simulated target will circle at constant speed
@@ -89,7 +86,7 @@ class Thread_commandSim(threading.Thread):
            
             else:            # simulated tellos speed control
 
-               self.mobiles[elt][1].computemotion()
+               if not (self.mobiles[elt][0]): self.mobiles[elt][1].computemotion()
 
 
 #              if not (self.vehicles[elt][0]):
@@ -98,7 +95,8 @@ class Thread_commandSim(threading.Thread):
 #                deltastep = deltapos * drone_speed / 250.0
 #                self.vehicles[elt][1].position = np.add(pos,deltastep)
 
-          time.sleep(self.simuPeriod-(time.time()-starttime))
+        # if not self.suspend:
+        time.sleep(self.simuPeriod-(time.time()-starttime))
 
 
     finally: 

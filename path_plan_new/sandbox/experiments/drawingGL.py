@@ -28,9 +28,9 @@ class View3D():
 
 
   def addplot(self,ident,color):
-    txt = gl.GLTextItem(text=str(ident))
-    self.glvw.addItem(txt)
-    self.txts[ident] = txt
+    self.label = gl.GLTextItem(text=str(ident))
+    self.glvw.addItem(self.label)
+    self.txts[ident] = self.label
     self.colors[self.nbcol]=color
     self.nbcol = self.nbcol+1
 
@@ -89,8 +89,10 @@ class DrawingGL():
 
     self.plots = {}
     i = 0
-    self.colors = np.empty((self.vehicleNb,4))
-    self.positions = np.empty((self.vehicleNb,3))
+#    self.colors = np.empty((self.vehicleNb,4))
+#    self.positions = np.empty((self.vehicleNb,3))
+    self.colors = np.zeros((self.vehicleNb,4))
+    self.positions = np.zeros((self.vehicleNb,3))
 
     for elt in vehicles:
       self.plots[elt]=vehicles[elt][1]
@@ -119,7 +121,6 @@ class DrawingGL():
 
     newcolors = np.copy(self.colors)   # to preserve original colors array
     for i,elt in enumerate(self.plots):
-#      (pos,val,vel,head)=self.plots[elt](elt) # call register get function 
       if self.plots[elt].valid: self.positions[i] = self.plots[elt].position
       else: newcolors[i][3]=0
 

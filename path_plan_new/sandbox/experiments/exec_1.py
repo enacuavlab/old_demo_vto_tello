@@ -80,7 +80,6 @@ def main(bodies,mobiles):
     print("finally")
     flag.set()
     if (len(bodies)<len(mobiles)): threadCmdSim.join()
-    if (len(bodies)>0) and (len(mobiles)>1): threadCmdReal.join()
     if (len(mobiles)>1): threadMission.join()
 
 

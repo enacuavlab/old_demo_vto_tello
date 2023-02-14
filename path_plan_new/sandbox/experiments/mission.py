@@ -113,7 +113,7 @@ class Thread_mission(threading.Thread):
         starttime = time.time()
 
         if (self.mobiles[888][0]):               # check suspended position capture for real target 
-          if not (velf.mobiles[888][1].valid):
+          if not (self.mobiles[888][1].valid):
             unvalidcpt = unvalidcpt+1
             if unvalidcpt == 10: break
             else: continue
